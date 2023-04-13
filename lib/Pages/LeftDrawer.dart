@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/Pages/CategoriesPage.dart';
-import 'package:flutter_application_1/Pages/LedgerPage.dart';
+import 'package:MBA22/Pages/CategoriesPage.dart';
+import 'package:MBA22/Pages/LedgerPage.dart';
 
 import '../Helpers/SharedPreferencesManager.dart';
 import 'AccountsPage.dart';

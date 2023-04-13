@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_application_1/Models/AccountModel.dart';
+import 'package:MBA22/Models/AccountModel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Helpers/SharedPreferencesManager.dart';
-import 'package:flutter_application_1/Models/LedgerModel.dart';
+import 'package:MBA22/Models/LedgerModel.dart';
 import 'MainPage.dart';
 import 'AccountTransactionPage.dart';
 
@@ -88,130 +88,132 @@ class _AccountsPage extends State<AccountsPage> {
       appBar: AppBar(
         title: Text('Accounts'),
       ),
-      body: Stack(children: [
-        SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                StreamBuilder<QuerySnapshot>(
-                  stream: userAccounts.snapshots(),
-                  builder: (BuildContext context,
-                      AsyncSnapshot<QuerySnapshot> snapshot) {
-                    if (snapshot.hasError) {
-                      return Text('Error: ${snapshot.error}');
-                    }
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  StreamBuilder<QuerySnapshot>(
+                    stream: userAccounts.snapshots(),
+                    builder: (BuildContext context,
+                        AsyncSnapshot<QuerySnapshot> snapshot) {
+                      if (snapshot.hasError) {
+                        return Text('Error: ${snapshot.error}');
+                      }
 
-                    if (snapshot.hasData && snapshot.data != null) {
-                      return ListView(
-                        shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        children: snapshot.data!.docs
-                            .map((DocumentSnapshot document) {
-                          Map<String, dynamic> data =
-                              document.data() as Map<String, dynamic>;
-                          return InkWell(
-                              onTap: () {
-                                // Go to transactions
-                              },
-                              child: ListTile(
-                                  title: Text(data['accountName']),
-                                  subtitle: Text(data['unit']),
-                                  onTap: () {
-                                    setAccountID(document);
-                                    Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                AccountTransactionPage()));
-                                  },
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(data['balance'].toString()),
-                                      IconButton(
-                                        icon: Icon(Icons.more_vert),
-                                        onPressed: () {
-                                          setState(() {
-                                            showModalBottomSheet(
-                                              context: context,
-                                              builder: (BuildContext context) {
-                                                return Container(
-                                                  child: Column(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: <Widget>[
-                                                      ListTile(
-                                                        leading:
-                                                            Icon(Icons.edit),
-                                                        title: Text('Update'),
-                                                        onTap: () {
-                                                          // do something
-                                                          Navigator.pop(
-                                                              context);
-                                                          showAccountUpdaterDialog(
-                                                              context,
-                                                              document);
-                                                        },
-                                                      ),
-                                                      ListTile(
-                                                        leading:
-                                                            Icon(Icons.delete),
-                                                        title: Text('Delete'),
-                                                        onTap: () async {
-                                                          // do something
-                                                          String documentId =
-                                                              document.id;
-                                                          await accounts
-                                                              .doc(documentId)
-                                                              .update({
-                                                            'isActive': false
-                                                          });
-                                                          await accounts
-                                                              .doc(documentId)
-                                                              .update({
-                                                            'updateDate':
-                                                                DateTime.now()
-                                                          });
-                                                          Navigator.pop(
-                                                              context);
-                                                        },
-                                                      ),
-                                                    ],
-                                                  ),
-                                                );
-                                              },
-                                            );
-                                          });
-                                        },
-                                      ),
-                                    ],
-                                  )));
-                        }).toList(),
-                      );
-                    } else {
-                      return Text('No data available');
-                    }
-                  },
-                ),
-              ],
+                      if (snapshot.hasData && snapshot.data != null) {
+                        return ListView(
+                          shrinkWrap: true,
+                          physics: NeverScrollableScrollPhysics(),
+                          children: snapshot.data!.docs
+                              .map((DocumentSnapshot document) {
+                            Map<String, dynamic> data =
+                                document.data() as Map<String, dynamic>;
+                            return InkWell(
+                                onTap: () {
+                                  // Go to transactions
+                                },
+                                child: ListTile(
+                                    title: Text(data['accountName']),
+                                    subtitle: Text(data['unit']),
+                                    onTap: () {
+                                      setAccountID(document);
+                                      Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  AccountTransactionPage()));
+                                    },
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(data['balance'].toString()),
+                                        IconButton(
+                                          icon: Icon(Icons.more_vert),
+                                          onPressed: () {
+                                            setState(() {
+                                              showModalBottomSheet(
+                                                context: context,
+                                                builder:
+                                                    (BuildContext context) {
+                                                  return Container(
+                                                    child: Column(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: <Widget>[
+                                                        ListTile(
+                                                          leading:
+                                                              Icon(Icons.edit),
+                                                          title: Text('Update'),
+                                                          onTap: () {
+                                                            // do something
+                                                            Navigator.pop(
+                                                                context);
+                                                            showAccountUpdaterDialog(
+                                                                context,
+                                                                document);
+                                                          },
+                                                        ),
+                                                        ListTile(
+                                                          leading: Icon(
+                                                              Icons.delete),
+                                                          title: Text('Delete'),
+                                                          onTap: () async {
+                                                            // do something
+                                                            String documentId =
+                                                                document.id;
+                                                            await accounts
+                                                                .doc(documentId)
+                                                                .update({
+                                                              'isActive': false
+                                                            });
+                                                            await accounts
+                                                                .doc(documentId)
+                                                                .update({
+                                                              'updateDate':
+                                                                  DateTime.now()
+                                                            });
+                                                            Navigator.pop(
+                                                                context);
+                                                          },
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                },
+                                              );
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    )));
+                          }).toList(),
+                        );
+                      } else {
+                        return Text('No data available');
+                      }
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-        Align(
-          alignment: Alignment.bottomRight,
-          child: Padding(
-            padding: const EdgeInsets.all(30.0),
-            child: FloatingActionButton(
-              onPressed: () {
-                showAccountAdderDialog(context);
-              },
-              child: Icon(Icons.add),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: Padding(
+              padding: const EdgeInsets.all(30.0),
+              child: FloatingActionButton(
+                onPressed: () {
+                  showAccountAdderDialog(context);
+                },
+                child: Icon(Icons.add),
+              ),
             ),
           ),
-        ),
-      ],
+        ],
       ),
     );
   }

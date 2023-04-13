@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Helpers/SharedPreferencesManager.dart';
-import 'package:flutter_application_1/Models/LedgerModel.dart';
+import 'package:MBA22/Models/LedgerModel.dart';
 import 'MainPage.dart';
 
 class LedgerPage extends StatefulWidget {

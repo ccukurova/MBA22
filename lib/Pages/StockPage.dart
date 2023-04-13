@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_application_1/Models/AccountModel.dart';
-import 'package:flutter_application_1/Pages/StockTransactionPage.dart';
+import 'package:MBA22/Models/AccountModel.dart';
+import 'package:MBA22/Pages/StockTransactionPage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Helpers/SharedPreferencesManager.dart';
-import 'package:flutter_application_1/Models/LedgerModel.dart';
+import 'package:MBA22/Models/LedgerModel.dart';
 import '../Models/StockModel.dart';
 import 'MainPage.dart';
 

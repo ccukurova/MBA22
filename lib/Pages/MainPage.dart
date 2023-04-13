@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/Pages/LeftDrawer.dart';
+import 'package:MBA22/Pages/LeftDrawer.dart';
 import '../Helpers/SharedPreferencesManager.dart';
 import 'LeftDrawer.dart';
 
@@ -9,13 +9,11 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPage extends State<MainPage> {
+  String? currentUserID;
+  String? currentLedgerID;
+  final SharedPreferencesManager prefs = SharedPreferencesManager();
 
-    String? currentUserID;
-    String? currentLedgerID;
-    final SharedPreferencesManager prefs = SharedPreferencesManager();
-
-
-   @override
+  @override
   void initState() {
     super.initState();
     prefs.getString("userID").then((value) {
@@ -37,20 +35,16 @@ class _MainPage extends State<MainPage> {
         title: Text('Main Page'),
       ),
       drawer: LeftDrawer(),
-      body: Column(
-        children:[
-           Text(
+      body: Column(children: [
+        Text(
           'Current user:${currentUserID}',
           style: TextStyle(fontSize: 24),
         ),
-         Text(
+        Text(
           'Current ledger:${currentLedgerID}',
           style: TextStyle(fontSize: 24),
         )
-
-        ]
-        
-      ),
+      ]),
     );
   }
 }

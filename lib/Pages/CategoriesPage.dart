@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../Helpers/SharedPreferencesManager.dart';
-import 'package:flutter_application_1/Models/CategoryModel.dart';
+import 'package:MBA22/Models/CategoryModel.dart';
 import 'MainPage.dart';
 
 class CategoriesPage extends StatefulWidget {
