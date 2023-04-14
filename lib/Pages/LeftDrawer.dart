@@ -1,3 +1,4 @@
+import 'package:MBA22/Pages/NotesPage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:MBA22/Pages/CategoriesPage.dart';
@@ -75,7 +76,8 @@ class _LeftDrawerState extends State<LeftDrawer> {
           ListTile(
             title: Text('Notes'),
             onTap: () {
-              // Do something when the user taps on this ListTile
+              Navigator.push(
+                  context, MaterialPageRoute(builder: (context) => NotePage()));
             },
           ),
           ListTile(
