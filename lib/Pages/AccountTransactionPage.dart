@@ -60,6 +60,8 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
   Widget build(BuildContext context) {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     CollectionReference transactions = firestore.collection('transactions');
+    CollectionReference stockTransactions =
+        firestore.collection('transactions');
 
     if (currentAccountID == null) {
       return Scaffold(
@@ -70,12 +72,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
     }
 
     Query userAccountTransactions = transactions
-        .where('accountID', isEqualTo: currentAccountID)
-        .where('isActive', isEqualTo: true)
-        .orderBy('createDate', descending: true);
-
-    Query userSourceAccountTransactions = transactions
-        .where('sourceAccountID', isEqualTo: currentAccountID)
+        .where('accountID', arrayContains: currentAccountID)
         .where('isActive', isEqualTo: true)
         .orderBy('createDate', descending: true);
 
@@ -227,9 +224,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                               );
                             }
                             if (data['transactionType'] == 'Collection' ||
-                                data['transactionType'] == 'Payment' ||
-                                data['transactionType'] == 'Buy' ||
-                                data['transactionType'] == 'Sell') {
+                                data['transactionType'] == 'Payment') {
                               return InkWell(
                                 onTap: () {
                                   // Go to transaction details
@@ -336,8 +331,165 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                     FutureBuilder<List<String>>(
                                       future: Future.wait([
                                         getAccountNameByID(
-                                            data['sourceAccountID']),
-                                        getAccountNameByID(data['accountID']),
+                                            data['accountID'][0]),
+                                        getAccountNameByID(
+                                            data['accountID'][1]),
+                                      ]),
+                                      builder: (BuildContext context,
+                                          AsyncSnapshot<List<String>>
+                                              snapshot) {
+                                        if (snapshot.connectionState ==
+                                            ConnectionState.done) {
+                                          if (snapshot.hasData) {
+                                            final sourceAccountName =
+                                                snapshot.data![1];
+                                            final accountName =
+                                                snapshot.data![0];
+                                            String arrow = "-";
+
+                                            if (data['transactionType'] ==
+                                                    'Buy' ||
+                                                data['transactionType'] ==
+                                                    'Payment') arrow = '\u2192';
+
+                                            if (data['transactionType'] ==
+                                                    'Sell' ||
+                                                data['transactionType'] ==
+                                                    'Collection')
+                                              arrow = '\u2190';
+
+                                            return Text(
+                                                '$sourceAccountName $arrow $accountName');
+                                          } else {
+                                            return Text(
+                                                'Error: ${snapshot.error}');
+                                          }
+                                        } else {
+                                          return CircularProgressIndicator();
+                                        }
+                                      },
+                                    ),
+                                    Text(DateFormat('dd-MM-yyyy – kk:mm')
+                                        .format(data['createDate']
+                                            .toDate()
+                                            .toLocal())),
+                                  ]),
+                                ),
+                              );
+                            }
+                            if (data['transactionType'] == 'Buy' ||
+                                data['transactionType'] == 'Sell') {
+                              return InkWell(
+                                onTap: () {
+                                  // Go to transaction details
+                                },
+                                child: ListTile(
+                                  title: Row(children: [
+                                    Expanded(
+                                        child: Text(
+                                          '${data['transactionType']}',
+                                          style: TextStyle(fontSize: 16),
+                                        ),
+                                        flex: 2),
+                                    Expanded(
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          if (data['transactionType'] == 'Buy')
+                                            Text(
+                                              '+${data['totalPrice'].toString()} ',
+                                              style: TextStyle(
+                                                  color: Colors.green,
+                                                  fontSize: 20),
+                                            ),
+                                          if (data['totalPrice'] == 'Sell')
+                                            Text(
+                                              '-${data['amount'].toString()}',
+                                              style: TextStyle(
+                                                  color: Colors.red,
+                                                  fontSize: 20),
+                                            ),
+                                          if (data['amount'] == 0)
+                                            Text(
+                                              data['amount'].toString(),
+                                              style: TextStyle(fontSize: 20),
+                                            ),
+                                        ],
+                                      ),
+                                      flex: 6,
+                                    ),
+                                    Expanded(
+                                        child: IconButton(
+                                          icon: Icon(Icons.more_vert),
+                                          onPressed: () {
+                                            setState(() {
+                                              showModalBottomSheet(
+                                                context: context,
+                                                builder:
+                                                    (BuildContext context) {
+                                                  return Container(
+                                                    child: Column(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: <Widget>[
+                                                        ListTile(
+                                                          leading:
+                                                              Icon(Icons.edit),
+                                                          title: Text('Update'),
+                                                          onTap: () {
+                                                            // do something
+                                                            Navigator.pop(
+                                                                context);
+                                                            // showStockTransactionUpdaterDialog(
+                                                            //     context,
+                                                            //     document);
+                                                          },
+                                                        ),
+                                                        ListTile(
+                                                          leading: Icon(
+                                                              Icons.delete),
+                                                          title: Text('Delete'),
+                                                          onTap: () async {
+                                                            // do something
+                                                            String documentId =
+                                                                document.id;
+                                                            await stockTransactions
+                                                                .doc(documentId)
+                                                                .update({
+                                                              'isActive': false
+                                                            });
+                                                            await stockTransactions
+                                                                .doc(documentId)
+                                                                .update({
+                                                              'updateDate':
+                                                                  DateTime.now()
+                                                            });
+                                                            Navigator.pop(
+                                                                context);
+                                                          },
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                },
+                                              );
+                                            });
+                                          },
+                                        ),
+                                        flex: 2),
+                                  ]),
+                                  subtitle: Column(children: [
+                                    Text(
+                                      '${data['amount']}x${data['price'].toString()}=${data['totalPrice']}',
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                    FutureBuilder<List<String>>(
+                                      future: Future.wait([
+                                        getAccountNameByID(
+                                            data['accountID'][1]),
+                                        getAccountNameByID(
+                                            data['accountID'][0]),
                                       ]),
                                       builder: (BuildContext context,
                                           AsyncSnapshot<List<String>>
@@ -349,8 +501,21 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                 snapshot.data![0];
                                             final accountName =
                                                 snapshot.data![1];
+                                            String arrow = "-";
+
+                                            if (data['transactionType'] ==
+                                                    'Buy' ||
+                                                data['transactionType'] ==
+                                                    'Payment') arrow = '\u2192';
+
+                                            if (data['transactionType'] ==
+                                                    'Sell' ||
+                                                data['transactionType'] ==
+                                                    'Collection')
+                                              arrow = '\u2190';
+
                                             return Text(
-                                                '$sourceAccountName \u2190 $accountName');
+                                                '$sourceAccountName $arrow $accountName');
                                           } else {
                                             return Text(
                                                 'Error: ${snapshot.error}');
@@ -1073,8 +1238,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
 
     try {
       newAccountTransaction = TransactionModel(
-          accountID: currentAccountID!,
-          sourceAccountID: sourceAccountID,
+          accountID: [currentAccountID!, sourceAccountID],
           stockID: "",
           transactionType: selectedTransactionType,
           amount: _amount,
@@ -1092,7 +1256,6 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
 
       DocumentReference transactionsDoc = await transactions.add({
         'accountID': newAccountTransaction.accountID,
-        'sourceAccountID': newAccountTransaction.sourceAccountID,
         'stockID': newAccountTransaction.stockID,
         'transactionType': newAccountTransaction.transactionType,
         'amount': newAccountTransaction.amount,
@@ -1131,7 +1294,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
           newAccountTransaction.transactionType == 'Payment') {
         final sourceAccountDoc = firestore
             .collection('accounts')
-            .doc(newAccountTransaction.sourceAccountID);
+            .doc(newAccountTransaction.accountID[1]);
         final snapshot = await sourceAccountDoc.get();
         double sourceAccountBalance = 0;
 

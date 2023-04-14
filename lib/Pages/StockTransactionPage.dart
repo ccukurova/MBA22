@@ -27,8 +27,6 @@ class StockTransactionPageState extends State<StockTransactionPage> {
   void initState() {
     super.initState();
 
-    print('INITSTATE WORKED');
-
     prefs.getString("stockID").then((value) {
       setState(() {
         currentStockID = value;
@@ -337,8 +335,9 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                                     FutureBuilder<List<String>>(
                                       future: Future.wait([
                                         getAccountNameByID(
-                                            data['sourceAccountID']),
-                                        getAccountNameByID(data['accountID']),
+                                            data['accountID'][1]),
+                                        getAccountNameByID(
+                                            data['accountID'][0]),
                                       ]),
                                       builder: (BuildContext context,
                                           AsyncSnapshot<List<String>>
@@ -350,8 +349,21 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                                                 snapshot.data![0];
                                             final accountName =
                                                 snapshot.data![1];
+                                            String arrow = "-";
+
+                                            if (data['transactionType'] ==
+                                                    'Buy' ||
+                                                data['transactionType'] ==
+                                                    'Payment') arrow = '\u2192';
+
+                                            if (data['transactionType'] ==
+                                                    'Sell' ||
+                                                data['transactionType'] ==
+                                                    'Collection')
+                                              arrow = '\u2190';
+
                                             return Text(
-                                                '$sourceAccountName \u2190 $accountName');
+                                                '$sourceAccountName $arrow $accountName');
                                           } else {
                                             return Text(
                                                 'Error: ${snapshot.error}');
@@ -1235,8 +1247,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
 
     try {
       newAddStockTransaction = TransactionModel(
-          accountID: externalAccountID,
-          sourceAccountID: sourceAccountID,
+          accountID: [externalAccountID, sourceAccountID],
           stockID: currentStockID!,
           transactionType: selectedTransactionType,
           amount: _amount,
@@ -1254,7 +1265,6 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
 
       DocumentReference transactionsDoc = await stockTransactions.add({
         'accountID': newAddStockTransaction.accountID,
-        'sourceAccountID': newAddStockTransaction.sourceAccountID,
         'stockID': newAddStockTransaction.stockID,
         'transactionType': newAddStockTransaction.transactionType,
         'amount': newAddStockTransaction.amount,
@@ -1293,7 +1303,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
           newAddStockTransaction.transactionType == 'Sell') {
         final sourceAccountDoc = firestore
             .collection('accounts')
-            .doc(newAddStockTransaction.sourceAccountID);
+            .doc(newAddStockTransaction.accountID[1]);
         final snapshot = await sourceAccountDoc.get();
         double sourceAccountBalance = 0;
 
@@ -1306,7 +1316,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
 
         final externalAccountDoc = firestore
             .collection('accounts')
-            .doc(newAddStockTransaction.accountID);
+            .doc(newAddStockTransaction.accountID[0]);
         final externalAccountSnapshot = await externalAccountDoc.get();
         double externalAccountBalance = 0;
 

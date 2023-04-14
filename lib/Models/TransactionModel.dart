@@ -1,6 +1,5 @@
 class TransactionModel {
-  String accountID;
-  String sourceAccountID;
+  List<String> accountID;
   String stockID;
   String transactionType;
   double amount;
@@ -18,7 +17,6 @@ class TransactionModel {
 
   TransactionModel(
       {required this.accountID,
-      required this.sourceAccountID,
       required this.stockID,
       required this.transactionType,
       required this.amount,
