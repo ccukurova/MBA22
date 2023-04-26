@@ -56,6 +56,14 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
     // );
   }
 
+  Future<DocumentSnapshot> getCurrentAccount() async {
+    CollectionReference accounts = firestore.collection('accounts');
+
+    DocumentSnapshot accountSnapshot =
+        await accounts.doc(currentAccountID).get();
+    return accountSnapshot;
+  }
+
   @override
   Widget build(BuildContext context) {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -107,6 +115,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                             Map<String, dynamic> data =
                                 document.data() as Map<String, dynamic>;
                             bool showIcons = false;
+                            String documentId = document.id;
                             if (data['transactionType'] == 'Add' ||
                                 data['transactionType'] == 'Subtract') {
                               return InkWell(
@@ -129,15 +138,16 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                 if (data['transactionType'] ==
                                                     'Add')
                                                   Text(
-                                                    '+${data['amount'].toString()}',
+                                                    '+${data['totalPrice'].toString()}',
                                                     style: TextStyle(
                                                         color: Colors.green,
                                                         fontSize: 20),
+                                                    textAlign: TextAlign.center,
                                                   ),
                                                 if (data['transactionType'] ==
                                                     'Subtract')
                                                   Text(
-                                                    '-${data['amount'].toString()}',
+                                                    '-${data['totalPrice'].toString()}',
                                                     style: TextStyle(
                                                         color: Colors.red,
                                                         fontSize: 20),
@@ -151,65 +161,71 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                   ),
                                               ])),
                                       Expanded(
-                                        flex: 2,
-                                        child: IconButton(
-                                          icon: Icon(Icons.more_vert),
-                                          onPressed: () {
-                                            setState(() {
-                                              showModalBottomSheet(
-                                                context: context,
-                                                builder:
-                                                    (BuildContext context) {
-                                                  return Container(
-                                                    child: Column(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: <Widget>[
-                                                        ListTile(
-                                                          leading:
-                                                              Icon(Icons.edit),
-                                                          title: Text('Update'),
-                                                          onTap: () {
-                                                            // do something
-                                                            Navigator.pop(
-                                                                context);
-                                                            showAccountTransactionUpdaterDialog(
-                                                                context,
-                                                                document);
-                                                          },
-                                                        ),
-                                                        ListTile(
-                                                          leading: Icon(
-                                                              Icons.delete),
-                                                          title: Text('Delete'),
-                                                          onTap: () async {
-                                                            // do something
-                                                            String documentId =
-                                                                document.id;
-                                                            await transactions
-                                                                .doc(documentId)
-                                                                .update({
-                                                              'isActive': false
-                                                            });
-                                                            await transactions
-                                                                .doc(documentId)
-                                                                .update({
-                                                              'updateDate':
-                                                                  DateTime.now()
-                                                            });
-                                                            Navigator.pop(
-                                                                context);
-                                                          },
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  );
-                                                },
-                                              );
-                                            });
-                                          },
-                                        ),
-                                      )
+                                          child: IconButton(
+                                            icon: Icon(Icons.more_vert),
+                                            onPressed: () {
+                                              setState(() {
+                                                showModalBottomSheet(
+                                                  context: context,
+                                                  builder:
+                                                      (BuildContext context) {
+                                                    return Container(
+                                                      child: Column(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        children: <Widget>[
+                                                          ListTile(
+                                                            leading: Icon(
+                                                                Icons.edit),
+                                                            title:
+                                                                Text('Update'),
+                                                            onTap: () {
+                                                              // do something
+                                                              Navigator.pop(
+                                                                  context);
+                                                              showAccountTransactionUpdaterDialog(
+                                                                  context,
+                                                                  document);
+                                                            },
+                                                          ),
+                                                          ListTile(
+                                                            leading: Icon(
+                                                                Icons.delete),
+                                                            title:
+                                                                Text('Delete'),
+                                                            onTap: () async {
+                                                              // do something
+                                                              String
+                                                                  documentId =
+                                                                  document.id;
+                                                              await transactions
+                                                                  .doc(
+                                                                      documentId)
+                                                                  .update({
+                                                                'isActive':
+                                                                    false
+                                                              });
+                                                              await transactions
+                                                                  .doc(
+                                                                      documentId)
+                                                                  .update({
+                                                                'updateDate':
+                                                                    DateTime
+                                                                        .now()
+                                                              });
+                                                              Navigator.pop(
+                                                                  context);
+                                                            },
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    );
+                                                  },
+                                                );
+                                              });
+                                            },
+                                          ),
+                                          flex: 2),
                                     ],
                                   ),
                                   subtitle: Column(
@@ -237,35 +253,85 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                           style: TextStyle(fontSize: 16),
                                         ),
                                         flex: 2),
-                                    Expanded(
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          if (data['transactionType'] ==
-                                              'Collection')
-                                            Text(
-                                              '-${data['amount'].toString()} ',
-                                              style: TextStyle(
-                                                  color: Colors.red,
-                                                  fontSize: 20),
+                                    FutureBuilder<DocumentSnapshot>(
+                                      future: getCurrentAccount(),
+                                      builder: (BuildContext context,
+                                          AsyncSnapshot<DocumentSnapshot>
+                                              snapshot) {
+                                        if (snapshot.hasData) {
+                                          final accountData = snapshot.data!;
+
+                                          return Expanded(
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                if (data['transactionType'] ==
+                                                        'Collection' &&
+                                                    accountData[
+                                                            'accountType'] ==
+                                                        'External')
+                                                  Text(
+                                                    '-${data['totalPrice'].toString()} ',
+                                                    style: TextStyle(
+                                                      color: Colors.red,
+                                                      fontSize: 20,
+                                                    ),
+                                                  ),
+                                                if (data['transactionType'] ==
+                                                        'Collection' &&
+                                                    accountData[
+                                                            'accountType'] ==
+                                                        'Internal')
+                                                  Text(
+                                                    '+${data['totalPrice'].toString()}',
+                                                    style: TextStyle(
+                                                      color: Colors.green,
+                                                      fontSize: 20,
+                                                    ),
+                                                  ),
+                                                if (data['transactionType'] ==
+                                                        'Payment' &&
+                                                    accountData[
+                                                            'accountType'] ==
+                                                        'External')
+                                                  Text(
+                                                    '+${data['totalPrice'].toString()}',
+                                                    style: TextStyle(
+                                                      color: Colors.green,
+                                                      fontSize: 20,
+                                                    ),
+                                                  ),
+                                                if (data['transactionType'] ==
+                                                        'Payment' &&
+                                                    accountData[
+                                                            'accountType'] ==
+                                                        'Internal')
+                                                  Text(
+                                                    '-${data['totalPrice'].toString()} ',
+                                                    style: TextStyle(
+                                                      color: Colors.red,
+                                                      fontSize: 20,
+                                                    ),
+                                                  ),
+                                                if (data['totalPrice'] == 0)
+                                                  Text(
+                                                    data['totalPrice']
+                                                        .toString(),
+                                                    style:
+                                                        TextStyle(fontSize: 20),
+                                                  ),
+                                              ],
                                             ),
-                                          if (data['transactionType'] ==
-                                              'Payment')
-                                            Text(
-                                              '+${data['amount'].toString()}',
-                                              style: TextStyle(
-                                                  color: Colors.green,
-                                                  fontSize: 20),
-                                            ),
-                                          if (data['amount'] == 0)
-                                            Text(
-                                              data['amount'].toString(),
-                                              style: TextStyle(fontSize: 20),
-                                            ),
-                                        ],
-                                      ),
-                                      flex: 6,
+                                            flex: 6,
+                                          );
+                                        } else if (snapshot.hasError) {
+                                          return Text(
+                                              'Error: ${snapshot.error}');
+                                        } else {
+                                          return CircularProgressIndicator();
+                                        }
+                                      },
                                     ),
                                     Expanded(
                                         child: IconButton(
@@ -391,33 +457,84 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                           style: TextStyle(fontSize: 16),
                                         ),
                                         flex: 2),
-                                    Expanded(
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          if (data['transactionType'] == 'Buy')
-                                            Text(
-                                              '+${data['totalPrice'].toString()} ',
-                                              style: TextStyle(
-                                                  color: Colors.green,
-                                                  fontSize: 20),
+                                    FutureBuilder<DocumentSnapshot>(
+                                      future: getCurrentAccount(),
+                                      builder: (BuildContext context,
+                                          AsyncSnapshot<DocumentSnapshot>
+                                              snapshot) {
+                                        if (snapshot.hasData) {
+                                          final accountData = snapshot.data!;
+                                          return Expanded(
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                if (data['transactionType'] ==
+                                                        'Buy' &&
+                                                    accountData[
+                                                            'accountType'] ==
+                                                        'External')
+                                                  Text(
+                                                    '+${data['totalPrice'].toString()} ',
+                                                    style: TextStyle(
+                                                      color: Colors.green,
+                                                      fontSize: 20,
+                                                    ),
+                                                  ),
+                                                if (data['transactionType'] ==
+                                                        'Buy' &&
+                                                    accountData[
+                                                            'accountType'] ==
+                                                        'Internal')
+                                                  Text(
+                                                    '-${data['totalPrice'].toString()}',
+                                                    style: TextStyle(
+                                                      color: Colors.red,
+                                                      fontSize: 20,
+                                                    ),
+                                                  ),
+                                                if (data['transactionType'] ==
+                                                        'Sell' &&
+                                                    accountData[
+                                                            'accountType'] ==
+                                                        'External')
+                                                  Text(
+                                                    '-${data['totalPrice'].toString()}',
+                                                    style: TextStyle(
+                                                      color: Colors.red,
+                                                      fontSize: 20,
+                                                    ),
+                                                  ),
+                                                if (data['transactionType'] ==
+                                                        'Sell' &&
+                                                    accountData[
+                                                            'accountType'] ==
+                                                        'Internal')
+                                                  Text(
+                                                    '+${data['totalPrice'].toString()} ',
+                                                    style: TextStyle(
+                                                      color: Colors.green,
+                                                      fontSize: 20,
+                                                    ),
+                                                  ),
+                                                if (data['totalPrice'] == 0)
+                                                  Text(
+                                                    data['totalPrice']
+                                                        .toString(),
+                                                    style:
+                                                        TextStyle(fontSize: 20),
+                                                  ),
+                                              ],
                                             ),
-                                          if (data['totalPrice'] == 'Sell')
-                                            Text(
-                                              '-${data['amount'].toString()}',
-                                              style: TextStyle(
-                                                  color: Colors.red,
-                                                  fontSize: 20),
-                                            ),
-                                          if (data['amount'] == 0)
-                                            Text(
-                                              data['amount'].toString(),
-                                              style: TextStyle(fontSize: 20),
-                                            ),
-                                        ],
-                                      ),
-                                      flex: 6,
+                                            flex: 6,
+                                          );
+                                        } else if (snapshot.hasError) {
+                                          return Text(
+                                              'Error: ${snapshot.error}');
+                                        } else {
+                                          return CircularProgressIndicator();
+                                        }
+                                      },
                                     ),
                                     Expanded(
                                         child: IconButton(
@@ -591,7 +708,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
 
   String unit = '';
   String transactionDetail = '';
-  double amount = 0.0;
+  double totalPrice = 0.0;
   final SharedPreferencesManager prefs = SharedPreferencesManager();
 
   String dropDownValueUnit = 'For once';
@@ -830,7 +947,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                       },
                       onSaved: (value) {
                         try {
-                          amount = double.parse(value!);
+                          totalPrice = double.parse(value!);
                         } catch (e) {
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                             content: Text("Please enter a valid amount."),
@@ -966,7 +1083,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                           _formKey.currentState!.save();
                           createAccountTransaction(
                             selectedTransactionType,
-                            amount,
+                            totalPrice,
                             transactionDetail,
                             selectedSourceAccountID,
                           );
@@ -1036,7 +1153,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                         },
                         onSaved: (value) {
                           try {
-                            amount = double.parse(value!);
+                            totalPrice = double.parse(value!);
                           } catch (e) {
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                               content: Text("Please enter a valid amount."),
@@ -1182,7 +1299,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                             _formKey.currentState!.save();
                             createAccountTransaction(
                                 selectedTransactionType,
-                                amount,
+                                totalPrice,
                                 transactionDetail,
                                 selectedSourceAccount);
                             Navigator.pop(context);
@@ -1205,7 +1322,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
 
   Future<void> createAccountTransaction(
       String _selectedTransactionType,
-      double _amount,
+      double _totalPrice,
       String _transactionDetail,
       String _selectedSourceAccount) async {
     String? currentAccountID = await prefs.getString("accountID");
@@ -1241,8 +1358,8 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
           accountID: [currentAccountID!, sourceAccountID],
           stockID: "",
           transactionType: selectedTransactionType,
-          amount: _amount,
-          totalPrice: 0,
+          amount: 0,
+          totalPrice: _totalPrice,
           price: 0,
           transactionDetail: _transactionDetail,
           categoryName: '',
@@ -1283,11 +1400,11 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
       if (newAccountTransaction.transactionType == 'Payment' ||
           newAccountTransaction.transactionType == 'Add') {
         await documentSnapshot.reference
-            .update({'balance': accountBalance + amount});
+            .update({'balance': accountBalance + totalPrice});
       } else if (newAccountTransaction.transactionType == 'Collection' ||
           newAccountTransaction.transactionType == 'Subtract') {
         await documentSnapshot.reference
-            .update({'balance': accountBalance - amount});
+            .update({'balance': accountBalance - totalPrice});
       }
 
       if (newAccountTransaction.transactionType == 'Collection' ||

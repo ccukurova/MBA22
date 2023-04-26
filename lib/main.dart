@@ -1,3 +1,4 @@
+import 'package:MBA22/Pages/MainPage.dart';
 import 'package:flutter/material.dart';
 
 import 'Pages/LoginPage.dart';
@@ -21,8 +22,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: LoginPage(),
-      
+      home: MainPage(),
     );
   }
 }

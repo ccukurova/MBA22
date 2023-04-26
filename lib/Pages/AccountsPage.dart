@@ -16,6 +16,7 @@ class _AccountsPage extends State<AccountsPage> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   String? currentUserID;
   String? currentLedgerID;
+
   final SharedPreferencesManager prefs = SharedPreferencesManager();
 
   @override
@@ -70,6 +71,7 @@ class _AccountsPage extends State<AccountsPage> {
   Widget build(BuildContext context) {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     CollectionReference accounts = firestore.collection('accounts');
+    CollectionReference transactions = firestore.collection('transactions');
 
     if (currentUserID == null || currentLedgerID == null) {
       return Scaffold(
@@ -112,84 +114,102 @@ class _AccountsPage extends State<AccountsPage> {
                               .map((DocumentSnapshot document) {
                             Map<String, dynamic> data =
                                 document.data() as Map<String, dynamic>;
+                            String documentId =
+                                document.id; // Get the document ID
                             return InkWell(
+                              onTap: () {
+                                // Go to transactions
+                              },
+                              child: ListTile(
+                                title: Text(data['accountName']),
+                                subtitle: Text(data['unit']),
                                 onTap: () {
-                                  // Go to transactions
+                                  setAccountID(document);
+                                  Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              AccountTransactionPage()));
                                 },
-                                child: ListTile(
-                                    title: Text(data['accountName']),
-                                    subtitle: Text(data['unit']),
-                                    onTap: () {
-                                      setAccountID(document);
-                                      Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  AccountTransactionPage()));
-                                    },
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(data['balance'].toString()),
-                                        IconButton(
-                                          icon: Icon(Icons.more_vert),
-                                          onPressed: () {
-                                            setState(() {
-                                              showModalBottomSheet(
-                                                context: context,
-                                                builder:
-                                                    (BuildContext context) {
-                                                  return Container(
-                                                    child: Column(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: <Widget>[
-                                                        ListTile(
-                                                          leading:
-                                                              Icon(Icons.edit),
-                                                          title: Text('Update'),
-                                                          onTap: () {
-                                                            // do something
-                                                            Navigator.pop(
-                                                                context);
-                                                            showAccountUpdaterDialog(
-                                                                context,
-                                                                document);
-                                                          },
-                                                        ),
-                                                        ListTile(
-                                                          leading: Icon(
-                                                              Icons.delete),
-                                                          title: Text('Delete'),
-                                                          onTap: () async {
-                                                            // do something
-                                                            String documentId =
-                                                                document.id;
-                                                            await accounts
-                                                                .doc(documentId)
-                                                                .update({
-                                                              'isActive': false
-                                                            });
-                                                            await accounts
-                                                                .doc(documentId)
-                                                                .update({
-                                                              'updateDate':
-                                                                  DateTime.now()
-                                                            });
-                                                            Navigator.pop(
-                                                                context);
-                                                          },
-                                                        ),
-                                                      ],
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    FutureBuilder<double>(
+                                      future: getAccountBalance(documentId),
+                                      builder: (BuildContext context,
+                                          AsyncSnapshot<double> snapshot) {
+                                        if (snapshot.connectionState ==
+                                            ConnectionState.waiting) {
+                                          // While the future is not yet complete, show a progress indicator
+                                          return Center(
+                                              child:
+                                                  CircularProgressIndicator());
+                                        } else if (snapshot.hasError) {
+                                          // If the future encounters an error, show an error message
+                                          return Text(
+                                              'Error: ${snapshot.error}');
+                                        } else {
+                                          // If the future completes successfully, display the account balance
+                                          return Text('${snapshot.data}');
+                                        }
+                                      },
+                                    ), // Pass the document ID as a parameter
+                                    IconButton(
+                                      icon: Icon(Icons.more_vert),
+                                      onPressed: () {
+                                        setState(() {
+                                          showModalBottomSheet(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return Container(
+                                                child: Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: <Widget>[
+                                                    ListTile(
+                                                      leading: Icon(Icons.edit),
+                                                      title: Text('Update'),
+                                                      onTap: () {
+                                                        // do something
+                                                        Navigator.pop(context);
+                                                        showAccountUpdaterDialog(
+                                                            context, document);
+                                                      },
                                                     ),
-                                                  );
-                                                },
+                                                    ListTile(
+                                                      leading:
+                                                          Icon(Icons.delete),
+                                                      title: Text('Delete'),
+                                                      onTap: () async {
+                                                        // do something
+                                                        String documentId =
+                                                            document.id;
+                                                        await accounts
+                                                            .doc(documentId)
+                                                            .update({
+                                                          'isActive': false
+                                                        });
+                                                        await accounts
+                                                            .doc(documentId)
+                                                            .update({
+                                                          'updateDate':
+                                                              DateTime.now()
+                                                        });
+                                                        Navigator.pop(context);
+                                                      },
+                                                    ),
+                                                  ],
+                                                ),
                                               );
-                                            });
-                                          },
-                                        ),
-                                      ],
-                                    )));
+                                            },
+                                          );
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
                           }).toList(),
                         );
                       } else {
@@ -216,6 +236,62 @@ class _AccountsPage extends State<AccountsPage> {
         ],
       ),
     );
+  }
+
+  Future<double> getAccountBalance(String accountID) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    CollectionReference transactions = firestore.collection('transactions');
+    CollectionReference accounts = firestore.collection('accounts');
+    double balance = 0;
+    String accountType = ''; // declare as a string
+
+    Query userAccountTransactions = transactions
+        .where('accountID', arrayContains: accountID)
+        .where('isActive', isEqualTo: true)
+        .orderBy('createDate', descending: true);
+
+    DocumentReference accountRef = accounts.doc(accountID);
+    DocumentSnapshot docSnapshot = await accountRef.get();
+    if (docSnapshot.exists) {
+      accountType = docSnapshot.get('accountType');
+    }
+
+    QuerySnapshot querySnapshot = await userAccountTransactions.get();
+    querySnapshot.docs.forEach((transactionDoc) {
+      Map<String, dynamic>? transactionData =
+          transactionDoc.data() as Map<String, dynamic>?;
+      if (transactionData!['transactionType'] == 'Collection' &&
+          accountType == 'External') {
+        balance -= transactionData['totalPrice'];
+      } else if (transactionData!['transactionType'] == 'Collection' &&
+          accountType == 'Internal') {
+        balance += transactionData['totalPrice'];
+      } else if (transactionData!['transactionType'] == 'Payment' &&
+          accountType == 'External') {
+        balance += transactionData['totalPrice'];
+      } else if (transactionData!['transactionType'] == 'Payment' &&
+          accountType == 'Internal') {
+        balance -= transactionData['totalPrice'];
+      } else if (transactionData!['transactionType'] == 'Buy' &&
+          accountType == 'External') {
+        balance += transactionData['totalPrice'];
+      } else if (transactionData!['transactionType'] == 'Buy' &&
+          accountType == 'Internal') {
+        balance -= transactionData['totalPrice'];
+      } else if (transactionData!['transactionType'] == 'Sell' &&
+          accountType == 'External') {
+        balance -= transactionData['totalPrice'];
+      } else if (transactionData!['transactionType'] == 'Sell' &&
+          accountType == 'Internal') {
+        balance += transactionData['totalPrice'];
+      } else if (transactionData!['transactionType'] == 'Add') {
+        balance += transactionData['totalPrice'];
+      } else if (transactionData!['transactionType'] == 'Subtract') {
+        balance -= transactionData['totalPrice'];
+      }
+    });
+
+    return balance;
   }
 }
 
