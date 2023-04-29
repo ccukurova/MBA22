@@ -1,4 +1,5 @@
 import 'package:MBA22/Pages/Charts/LineChart.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:MBA22/Pages/LeftDrawer.dart';
 import '../Helpers/SharedPreferencesManager.dart';
@@ -26,20 +27,22 @@ class _MainPage extends State<MainPage> {
   @override
   void initState() {
     super.initState();
-    // prefs.getString("userID").then((value) {
-    //   setState(() {
-    //     currentUserID = value;
-    //   });
-    // });
-    // prefs.getString("ledgerID").then((value) {
-    //   setState(() {
-    //     currentLedgerID = value;
-    //   });
-    // });
+    prefs.getString("userID").then((value) {
+      setState(() {
+        currentUserID = value;
+      });
+    });
+    prefs.getString("ledgerID").then((value) {
+      setState(() {
+        currentLedgerID = value;
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    ExchangerateRequester requester = new ExchangerateRequester();
+    Future<double> rate = requester.getRate('EUR', 'TRY', 1000);
     return Scaffold(
       appBar: AppBar(
         title: Text('Main Page'),
@@ -62,8 +65,27 @@ class _MainPage extends State<MainPage> {
               enlargeFactor: 0.3,
               scrollDirection: Axis.horizontal,
             ),
-            items: [PieChart(), LineChart(), BarChart(), LatestExchangeRates()]
-                .map((i) {
+            items: [
+              FutureBuilder<List<PieData>>(
+                future: getPieList(currentLedgerID!),
+                builder: (BuildContext context,
+                    AsyncSnapshot<List<PieData>> snapshot) {
+                  if (snapshot.connectionState == ConnectionState.done) {
+                    if (snapshot.hasError) {
+                      print('Error: ${snapshot.error}');
+                      return Text('Error: ${snapshot.error}');
+                    } else {
+                      return PieChart(pieData: snapshot.data!);
+                    }
+                  } else {
+                    return CircularProgressIndicator();
+                  }
+                },
+              ),
+              LineChart(),
+              BarChart(),
+              LatestExchangeRates()
+            ].map((i) {
               return Builder(
                 builder: (BuildContext context) {
                   return i;
@@ -104,25 +126,54 @@ class _MainPage extends State<MainPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Text(
-                          'Net:',
-                          style: TextStyle(
-                            fontSize: 24.0,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          '30000',
-                          style: TextStyle(
-                            fontSize: 24.0,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        )
-                      ]),
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: <
+                      Widget>[
+                    Text(
+                      'Net:',
+                      style: TextStyle(
+                        fontSize: 24.0,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    FutureBuilder<double>(
+                      future: getSumOfRevenue(currentLedgerID!),
+                      builder: (context, revenueSnapshot) {
+                        if (revenueSnapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Center(child: CircularProgressIndicator());
+                        }
+                        if (revenueSnapshot.hasError) {
+                          return Center(child: Text("Error loading revenue"));
+                        }
+                        return FutureBuilder<double>(
+                          future: getSumOfExpense(currentLedgerID!),
+                          builder: (context, expenseSnapshot) {
+                            if (expenseSnapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return Center(child: CircularProgressIndicator());
+                            }
+                            if (expenseSnapshot.hasError) {
+                              return Center(
+                                  child: Text("Error loading expenses"));
+                            }
+                            final double revenue = revenueSnapshot.data ?? 0;
+                            final double expense = expenseSnapshot.data ?? 0;
+                            final double balance = revenue - expense;
+                            return Center(
+                              child: Text(
+                                balance.toString(),
+                                style: TextStyle(
+                                  fontSize: 24.0,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    )
+                  ]),
                   SizedBox(height: 10.0),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -135,12 +186,28 @@ class _MainPage extends State<MainPage> {
                             color: Colors.grey[600],
                           ),
                         ),
-                        Text(
-                          '50000',
-                          style: TextStyle(
-                            fontSize: 18.0,
-                            color: Colors.green,
-                          ),
+                        FutureBuilder<double>(
+                          future: getSumOfRevenue(currentLedgerID!),
+                          builder: (BuildContext context,
+                              AsyncSnapshot<double> snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              // While the future is being fetched, display a loading spinner
+                              return CircularProgressIndicator();
+                            } else if (snapshot.hasError) {
+                              // If there was an error fetching the data, display an error message
+                              return Text('Error: ${snapshot.error}');
+                            } else {
+                              // If the future has completed successfully, display the data
+                              return Text(
+                                snapshot.data.toString(),
+                                style: TextStyle(
+                                  fontSize: 18.0,
+                                  color: Colors.green,
+                                ),
+                              );
+                            }
+                          },
                         )
                       ]),
                       SizedBox(width: 30),
@@ -152,14 +219,30 @@ class _MainPage extends State<MainPage> {
                             color: Colors.grey[600],
                           ),
                         ),
-                        Text(
-                          '20000',
-                          style: TextStyle(
-                            fontSize: 18.0,
-                            color: Colors.red,
-                          ),
+                        FutureBuilder<double>(
+                          future: getSumOfExpense(currentLedgerID!),
+                          builder: (BuildContext context,
+                              AsyncSnapshot<double> snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              // While the future is being fetched, display a loading spinner
+                              return CircularProgressIndicator();
+                            } else if (snapshot.hasError) {
+                              // If there was an error fetching the data, display an error message
+                              return Text('Error: ${snapshot.error}');
+                            } else {
+                              // If the future has completed successfully, display the data
+                              return Text(
+                                snapshot.data.toString(),
+                                style: TextStyle(
+                                  fontSize: 18.0,
+                                  color: Colors.red,
+                                ),
+                              );
+                            }
+                          },
                         )
-                      ])
+                      ]),
                     ],
                   ),
                 ],
@@ -169,6 +252,88 @@ class _MainPage extends State<MainPage> {
         ]),
       ),
     );
+  }
+
+  Future<double> getSumOfRevenue(String ledgerID) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    CollectionReference transactions = firestore.collection('transactions');
+    Query userAccountTransactions = transactions
+        .where('ledgerID', isEqualTo: ledgerID)
+        .where('isActive', isEqualTo: true)
+        .where('transactionType', whereIn: ['Sell', 'Collection', 'Decrease']);
+
+    double totalRevenue = 0;
+
+    try {
+      QuerySnapshot snapshot = await userAccountTransactions.get();
+      snapshot.docs.forEach((DocumentSnapshot doc) {
+        totalRevenue += doc['totalPrice'];
+        print(doc['totalPrice']);
+      });
+    } catch (error) {
+      print('Error getting transactions: $error');
+    }
+
+    return totalRevenue;
+  }
+
+  Future<double> getSumOfExpense(String ledgerID) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    CollectionReference transactions = firestore.collection('transactions');
+    Query userAccountTransactions = transactions
+        .where('ledgerID', isEqualTo: ledgerID)
+        .where('isActive', isEqualTo: true)
+        .where('transactionType', whereIn: ['Buy', 'Payment', 'Increase']);
+
+    double totalExpense = 0;
+
+    try {
+      QuerySnapshot snapshot = await userAccountTransactions.get();
+      snapshot.docs.forEach((DocumentSnapshot doc) {
+        print(doc['totalPrice']);
+        totalExpense += doc['totalPrice'];
+      });
+    } catch (error) {
+      print('Error getting transactions: $error');
+    }
+
+    return totalExpense;
+  }
+
+  Future<List<PieData>> getPieList(String ledgerID) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    CollectionReference transactions = firestore.collection('transactions');
+    List<PieData> pieData = [];
+    List<String> categoryList = [];
+
+    Query userAccounts = transactions
+        .where('ledgerID', isEqualTo: ledgerID)
+        .where('isActive', isEqualTo: true);
+
+    try {
+      QuerySnapshot snapshot = await userAccounts.get();
+      snapshot.docs.forEach((DocumentSnapshot doc) {
+        if (doc['transactionType'] == 'Buy' ||
+            doc['transactionType'] == 'Payment') {
+          categoryList.add(doc['categoryName']);
+        }
+      });
+      categoryList.forEach((selectedCategory) {
+        int counter = 0;
+        categoryList.forEach((category) {
+          if (selectedCategory == category) {
+            counter++;
+          }
+        });
+        PieData newData = PieData(selectedCategory, counter, selectedCategory);
+        pieData.add(newData);
+      });
+      return pieData;
+    } catch (error) {
+      print('Error getting transactions: $error');
+    }
+
+    return pieData;
   }
 }
 

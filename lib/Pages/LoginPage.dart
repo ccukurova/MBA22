@@ -15,10 +15,27 @@ class LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   String email = '';
   String password = '';
+  bool rememberMe = false;
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   final users = FirebaseFirestore.instance.collection('users');
   FirebaseAuth mAuth = FirebaseAuth.instance;
   final SharedPreferencesManager prefs = SharedPreferencesManager();
+
+  @override
+  void initState() {
+    super.initState();
+
+    isAlreadyLoggedIn().then((value) {
+      setState(() {
+        if (value) {
+          Navigator.push(
+              context, MaterialPageRoute(builder: (context) => LedgerPage()));
+        } else {
+          rememberMe = false;
+        }
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,30 +85,64 @@ class LoginPageState extends State<LoginPage> {
                   },
                 ),
                 SizedBox(height: 16.0),
-                ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      _formKey.currentState!.save();
-                      print('Username: $email');
-                      print('Password: $password');
-                      loginUser(email, password);
-                    }
-                  },
-                  child: Text('Log in'),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Checkbox(
+                      value: rememberMe,
+                      onChanged: (value) {
+                        setState(() {
+                          rememberMe = value!;
+                          if (rememberMe) {
+                            prefs.setBool('rememberMe', true);
+                          } else if (!rememberMe) {
+                            prefs.setBool('rememberMe', false);
+                          }
+                        });
+                      },
+                    ),
+                    Text('Remember me')
+                  ],
+                ),
+                SizedBox(height: 16.0),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          _formKey.currentState!.save();
+                          print('Username: $email');
+                          print('Password: $password');
+                          loginUser(email, password);
+                        }
+                      },
+                      child: Text('Log in'),
+                    ),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => RegisterPage()));
+                      },
+                      child: Text('Register'),
+                    ),
+                  ],
                 ),
                 SizedBox(
-                  width: double.infinity,
-                  height: 20,
+                  height: 16,
                 ),
-                ElevatedButton(
+                TextButton(
                   onPressed: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => RegisterPage()));
+                    // Add your code here to handle the click event
+                    print('Forgot password clicked!');
                   },
-                  child: Text('Register'),
-                ),
+                  child: Text('Forgot my password'),
+                )
               ],
             ),
           ),
@@ -151,5 +202,14 @@ class LoginPageState extends State<LoginPage> {
     } catch (e) {
       print(e);
     }
+  }
+
+  Future<bool> isAlreadyLoggedIn() async {
+    String? currentUserID = await prefs.getString('userID');
+    bool? rememberMe = await prefs.getBool('rememberMe');
+    if (currentUserID != null && rememberMe == true) {
+      return true;
+    }
+    return false;
   }
 }

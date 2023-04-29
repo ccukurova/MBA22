@@ -116,8 +116,8 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                 document.data() as Map<String, dynamic>;
                             bool showIcons = false;
                             String documentId = document.id;
-                            if (data['transactionType'] == 'Add' ||
-                                data['transactionType'] == 'Subtract') {
+                            if (data['transactionType'] == 'Increase' ||
+                                data['transactionType'] == 'Decrease') {
                               return InkWell(
                                 onTap: () {
                                   // Go to transaction details
@@ -136,7 +136,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                   MainAxisAlignment.center,
                                               children: [
                                                 if (data['transactionType'] ==
-                                                    'Add')
+                                                    'Increase')
                                                   Text(
                                                     '+${data['totalPrice'].toString()}',
                                                     style: TextStyle(
@@ -145,7 +145,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                     textAlign: TextAlign.center,
                                                   ),
                                                 if (data['transactionType'] ==
-                                                    'Subtract')
+                                                    'Decrease')
                                                   Text(
                                                     '-${data['totalPrice'].toString()}',
                                                     style: TextStyle(
@@ -712,7 +712,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
   final SharedPreferencesManager prefs = SharedPreferencesManager();
 
   String dropDownValueUnit = 'For once';
-  String selectedTransactionType = 'Add';
+  String selectedTransactionType = 'Increase';
 
   String? currentLedgerID;
 
@@ -824,19 +824,20 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                   onTap: () {
                     setState(() {
                       // Change the text style when clicked
-                      selectedTransactionType = 'Add';
+                      selectedTransactionType = 'Increase';
                     });
                   },
                   child: Text(
-                    'Add',
+                    'Increase',
                     style: TextStyle(
-                      decoration: selectedTransactionType == 'Add'
+                      decoration: selectedTransactionType == 'Increase'
                           ? TextDecoration.underline
-                          : TextDecoration.none, // Add underline
-                      color: selectedTransactionType == 'Add'
+                          : TextDecoration.none,
+                      color: selectedTransactionType == 'Increase'
                           ? Color.fromARGB(255, 33, 236, 243)
                           : Colors.blue, // Change color when selected
-                      fontSize: selectedTransactionType == 'Add' ? 22.0 : 18.0,
+                      fontSize:
+                          selectedTransactionType == 'Increase' ? 22.0 : 18.0,
                     ),
                   ),
                 ),
@@ -847,20 +848,20 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                   onTap: () {
                     setState(() {
                       // Change the text style when clicked
-                      selectedTransactionType = 'Subtract';
+                      selectedTransactionType = 'Decrease';
                     });
                   },
                   child: Text(
-                    'Subtract',
+                    'Decrease',
                     style: TextStyle(
-                      decoration: selectedTransactionType == 'Subtract'
+                      decoration: selectedTransactionType == 'Decrease'
                           ? TextDecoration.underline
                           : TextDecoration.none, // Add underline
-                      color: selectedTransactionType == 'Subtract'
+                      color: selectedTransactionType == 'Decrease'
                           ? Color.fromARGB(255, 33, 236, 243)
                           : Colors.blue, // Change color when selected
                       fontSize:
-                          selectedTransactionType == 'Subtract' ? 22.0 : 18.0,
+                          selectedTransactionType == 'Decrease' ? 22.0 : 18.0,
                     ),
                   ),
                 ),
@@ -918,8 +919,8 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
         ),
       ),
       SizedBox(height: 16.0),
-      if (selectedTransactionType == 'Add' ||
-          selectedTransactionType == 'Subtract')
+      if (selectedTransactionType == 'Increase' ||
+          selectedTransactionType == 'Decrease')
         Container(
           child: Padding(
             padding: EdgeInsets.only(left: 10, top: 120, right: 10, bottom: 10),
@@ -1326,11 +1327,12 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
       String _transactionDetail,
       String _selectedSourceAccount) async {
     String? currentAccountID = await prefs.getString("accountID");
+    String? currentLedgerID = await prefs.getString("ledgerID");
     var newAccountTransaction;
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     CollectionReference accounts = firestore.collection('accounts');
     String sourceAccountID = "";
-
+    String? choosenCategory = await prefs.getString("choosenCategory");
     if (_selectedTransactionType == 'Collection' ||
         _selectedTransactionType == 'Payment') {
       final QuerySnapshot sourceAccountQuerySnapshot = await accounts
@@ -1356,13 +1358,14 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
     try {
       newAccountTransaction = TransactionModel(
           accountID: [currentAccountID!, sourceAccountID],
+          ledgerID: currentLedgerID!,
           stockID: "",
-          transactionType: selectedTransactionType,
+          transactionType: _selectedTransactionType,
           amount: 0,
           totalPrice: _totalPrice,
           price: 0,
           transactionDetail: _transactionDetail,
-          categoryName: '',
+          categoryName: choosenCategory!,
           period: '',
           duration: 0,
           targetDate: DateTime.now(),
@@ -1373,6 +1376,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
 
       DocumentReference transactionsDoc = await transactions.add({
         'accountID': newAccountTransaction.accountID,
+        'ledgerID': newAccountTransaction.ledgerID,
         'stockID': newAccountTransaction.stockID,
         'transactionType': newAccountTransaction.transactionType,
         'amount': newAccountTransaction.amount,
@@ -1398,11 +1402,11 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
 
       double accountBalance = await documentSnapshot.get('balance');
       if (newAccountTransaction.transactionType == 'Payment' ||
-          newAccountTransaction.transactionType == 'Add') {
+          newAccountTransaction.transactionType == 'Increase') {
         await documentSnapshot.reference
             .update({'balance': accountBalance + totalPrice});
       } else if (newAccountTransaction.transactionType == 'Collection' ||
-          newAccountTransaction.transactionType == 'Subtract') {
+          newAccountTransaction.transactionType == 'Decrease') {
         await documentSnapshot.reference
             .update({'balance': accountBalance - totalPrice});
       }

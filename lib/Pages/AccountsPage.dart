@@ -284,9 +284,9 @@ class _AccountsPage extends State<AccountsPage> {
       } else if (transactionData!['transactionType'] == 'Sell' &&
           accountType == 'Internal') {
         balance += transactionData['totalPrice'];
-      } else if (transactionData!['transactionType'] == 'Add') {
+      } else if (transactionData!['transactionType'] == 'Increase') {
         balance += transactionData['totalPrice'];
-      } else if (transactionData!['transactionType'] == 'Subtract') {
+      } else if (transactionData!['transactionType'] == 'Decrease') {
         balance -= transactionData['totalPrice'];
       }
     });

@@ -1,5 +1,6 @@
 class TransactionModel {
   List<String> accountID;
+  String ledgerID;
   String stockID;
   String transactionType;
   double amount;
@@ -17,6 +18,7 @@ class TransactionModel {
 
   TransactionModel(
       {required this.accountID,
+      required this.ledgerID,
       required this.stockID,
       required this.transactionType,
       required this.amount,

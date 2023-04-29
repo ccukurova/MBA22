@@ -17,6 +17,20 @@ class ExchangerateRequester {
     }
   }
 
+  Future<double> getRate(
+      String baseCurrency, String targetCurrency, double amount) async {
+    final url =
+        'https://api.exchangerate.host/convert?from=$baseCurrency&to=$targetCurrency&amount=$amount';
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      final rate = jsonResponse['info']['rate'] as double;
+      return rate;
+    } else {
+      throw Exception('Failed to load rate');
+    }
+  }
+
   Map<String, String> getDescriptions() {
     Map<String, String> rateDescriptions = {
       "AED": "United Arab Emirates Dirham",

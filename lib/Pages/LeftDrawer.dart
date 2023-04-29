@@ -1,9 +1,10 @@
+import 'package:MBA22/Pages/LoginPage.dart';
 import 'package:MBA22/Pages/NotesPage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:MBA22/Pages/CategoriesPage.dart';
 import 'package:MBA22/Pages/LedgerPage.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
 import '../Helpers/SharedPreferencesManager.dart';
 import 'AccountsPage.dart';
 import 'StockPage.dart';
@@ -19,7 +20,7 @@ class _LeftDrawerState extends State<LeftDrawer> {
   String? currentUserID;
   final SharedPreferencesManager prefs = SharedPreferencesManager();
   FirebaseFirestore firestore = FirebaseFirestore.instance;
-
+  FirebaseAuth mAuth = FirebaseAuth.instance;
   @override
   void initState() {
     super.initState();
@@ -106,6 +107,11 @@ class _LeftDrawerState extends State<LeftDrawer> {
               // Do something when the user taps on this ListTile
             },
           ),
+          ListTile(
+              title: Text('Exit'),
+              onTap: () {
+                signOutUser();
+              }),
         ],
       ),
     );
@@ -163,5 +169,13 @@ class _LeftDrawerState extends State<LeftDrawer> {
         color: Colors.blue,
       ),
     );
+  }
+
+  void signOutUser() async {
+    await FirebaseAuth.instance.signOut();
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => LoginPage()));
+
+    prefs.setBool('rememberMe', false);
   }
 }

@@ -25,4 +25,14 @@ class SharedPreferencesManager {
     await init();
     _prefs.setString(key, value);
   }
+
+  Future<bool?> getBool(String key) async {
+    await init();
+    return _prefs.getBool(key);
+  }
+
+  Future<void> setBool(String key, bool value) async {
+    await init();
+    _prefs.setBool(key, value);
+  }
 }

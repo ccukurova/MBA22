@@ -20,7 +20,7 @@ class StockTransactionPage extends StatefulWidget {
 class StockTransactionPageState extends State<StockTransactionPage> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   String? currentStockID;
-
+  String? currentLedgerID;
   final SharedPreferencesManager prefs = SharedPreferencesManager();
 
   @override
@@ -30,6 +30,11 @@ class StockTransactionPageState extends State<StockTransactionPage> {
     prefs.getString("stockID").then((value) {
       setState(() {
         currentStockID = value;
+      });
+    });
+    prefs.getString("ledgerID").then((value) {
+      setState(() {
+        currentLedgerID = value;
       });
     });
   }
@@ -447,8 +452,6 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
   String dropDownValueUnit = 'For once';
   String selectedTransactionType = 'Add';
 
-  String? currentLedgerID;
-
   TextEditingController sourceAccountController = TextEditingController();
   TextEditingController externalAccountController = TextEditingController();
   String totalPriceOutput = "Total price";
@@ -490,7 +493,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
   Future<List<String>>? getInternalAccountNames() async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     CollectionReference accounts = firestore.collection('accounts');
-
+    String? currentLedgerID = await prefs.getString("ledgerID");
     Query userAccountsQuery = accounts
         .where('ledgerID', isEqualTo: currentLedgerID)
         .where('isActive', isEqualTo: true)
@@ -513,7 +516,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
   Future<List<String>>? getExternalAccountNames() async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     CollectionReference accounts = firestore.collection('accounts');
-
+    String? currentLedgerID = await prefs.getString("ledgerID");
     Query userAccountsQuery = accounts
         .where('ledgerID', isEqualTo: currentLedgerID)
         .where('isActive', isEqualTo: true)
@@ -1196,6 +1199,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
       String _transactionDetail,
       String _selectedSourceAccount,
       String _selectedExternalAccount) async {
+    String? currentLedgerID = await prefs.getString("ledgerID");
     String? currentStockID = await prefs.getString("stockID");
     var newAddStockTransaction;
     FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -1203,6 +1207,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
     CollectionReference accounts = firestore.collection('accounts');
     String sourceAccountID = "";
     String externalAccountID = "";
+    String? choosenCategory = await prefs.getString("choosenCategory");
 
     if (_selectedTransactionType == 'Buy' ||
         _selectedTransactionType == 'Sell') {
@@ -1248,13 +1253,14 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
     try {
       newAddStockTransaction = TransactionModel(
           accountID: [externalAccountID, sourceAccountID],
+          ledgerID: currentLedgerID!,
           stockID: currentStockID!,
           transactionType: selectedTransactionType,
           amount: _amount,
           totalPrice: _totalPrice,
           price: _price,
           transactionDetail: _transactionDetail,
-          categoryName: '',
+          categoryName: choosenCategory!,
           period: '',
           duration: 0,
           targetDate: DateTime.now(),
@@ -1265,6 +1271,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
 
       DocumentReference transactionsDoc = await stockTransactions.add({
         'accountID': newAddStockTransaction.accountID,
+        'ledgerID': newAddStockTransaction.ledgerID,
         'stockID': newAddStockTransaction.stockID,
         'transactionType': newAddStockTransaction.transactionType,
         'amount': newAddStockTransaction.amount,
