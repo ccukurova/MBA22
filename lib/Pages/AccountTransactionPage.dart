@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:MBA22/Models/AccountModel.dart';
 import 'package:MBA22/Models/TransactionModel.dart';
 import 'package:MBA22/Pages/CategoriesPage.dart';
+import 'package:numberpicker/numberpicker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Helpers/SharedPreferencesManager.dart';
 import 'package:MBA22/Models/LedgerModel.dart';
@@ -727,6 +728,11 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
 
   String? currentAccountID;
 
+  TextEditingController duration = TextEditingController();
+
+  String selectedDurationText = "∞";
+  int selectedDuration = 2;
+
   @override
   void initState() {
     super.initState();
@@ -791,10 +797,12 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
     final timeFormatter = DateFormat('HH:mm');
     const List<String> unitList = <String>[
       'For once',
+      'Every day',
       'Every week',
       'Every month',
       'Every year'
     ];
+    duration.text = '∞';
 
     return Stack(children: [
       Row(
@@ -1080,14 +1088,21 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                       onPressed: () {
                         String selectedSourceAccountID =
                             sourceAccountController.text;
+                        DateTime targetDate = DateTime(
+                          _selectedDate.year,
+                          _selectedDate.month,
+                          _selectedDate.day,
+                          _selectedTime.hour,
+                          _selectedTime.minute,
+                        );
                         if (_formKey.currentState!.validate()) {
                           _formKey.currentState!.save();
                           createAccountTransaction(
-                            selectedTransactionType,
-                            totalPrice,
-                            transactionDetail,
-                            selectedSourceAccountID,
-                          );
+                              selectedTransactionType,
+                              totalPrice,
+                              transactionDetail,
+                              selectedSourceAccountID,
+                              targetDate);
                           Navigator.pop(context);
                         }
                       },
@@ -1246,7 +1261,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                                       _onTimeSelected(selected);
                                     }
                                   },
-                                ),
+                                )
                               ],
                             ),
                           ],
@@ -1281,8 +1296,51 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                       }).toList(),
                     ),
                     SizedBox(height: 25.0),
+                    if (dropDownValueUnit != 'For once')
+                      Container(
+                        child: Row(
+                          children: [
+                            Text('Duration'),
+                            TextButton(
+                              onPressed: () => {
+                                if (selectedDuration - 1 >= 2)
+                                  {
+                                    selectedDuration--,
+                                    duration.text = selectedDuration.toString()
+                                  }
+                                else if (selectedDuration == 2)
+                                  {duration.text = '∞'}
+                              },
+                              child: Text('<'),
+                            ),
+                            Expanded(
+                              child: TextFormField(
+                                controller: duration,
+                              ),
+                            ),
+                            TextButton(
+                                onPressed: () => {
+                                      if (selectedDuration + 1 > 2)
+                                        {
+                                          selectedDuration++,
+                                          duration.text =
+                                              selectedDuration.toString()
+                                        }
+                                    },
+                                child: Text('>')),
+                          ],
+                        ),
+                      ),
+                    SizedBox(height: 25.0),
                     ElevatedButton(
                       onPressed: () {
+                        DateTime targetDate = DateTime(
+                          _selectedDate.year,
+                          _selectedDate.month,
+                          _selectedDate.day,
+                          _selectedTime.hour,
+                          _selectedTime.minute,
+                        );
                         String selectedSourceAccount =
                             sourceAccountController.text;
 
@@ -1302,7 +1360,8 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                                 selectedTransactionType,
                                 totalPrice,
                                 transactionDetail,
-                                selectedSourceAccount);
+                                selectedSourceAccount,
+                                targetDate);
                             Navigator.pop(context);
                           } else {
                             sourceAccountValidator =
@@ -1325,7 +1384,8 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
       String _selectedTransactionType,
       double _totalPrice,
       String _transactionDetail,
-      String _selectedSourceAccount) async {
+      String _selectedSourceAccount,
+      DateTime _targetDate) async {
     String? currentAccountID = await prefs.getString("accountID");
     String? currentLedgerID = await prefs.getString("ledgerID");
     var newAccountTransaction;
@@ -1368,7 +1428,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
           categoryName: choosenCategory!,
           period: '',
           duration: 0,
-          targetDate: DateTime.now(),
+          targetDate: _targetDate,
           isDone: true,
           createDate: DateTime.now(),
           updateDate: DateTime.now(),

@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:MBA22/Pages/LeftDrawer.dart';
 import '../Helpers/SharedPreferencesManager.dart';
+import '../Models/TransactionModel.dart';
 import 'Charts/BarChart.dart';
 import 'LeftDrawer.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
@@ -10,6 +11,7 @@ import 'package:syncfusion_flutter_charts/sparkcharts.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'Charts/PieChart.dart';
 import 'package:MBA22/Services/RatesRequester.dart';
+import '../constants.dart';
 
 class MainPage extends StatefulWidget {
   @override
@@ -41,9 +43,13 @@ class _MainPage extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
+    checkForFutureTransactions(currentLedgerID!);
     ExchangerateRequester requester = new ExchangerateRequester();
     Future<double> rate = requester.getRate('EUR', 'TRY', 1000);
     return Scaffold(
+      appBar: AppBar(
+        title: Text('Main Page'),
+      ),
       drawer: LeftDrawer(),
       body: SingleChildScrollView(
         scrollDirection: Axis.vertical,
@@ -71,6 +77,11 @@ class _MainPage extends State<MainPage> {
                     if (snapshot.hasError) {
                       print('Error: ${snapshot.error}');
                       return Text('Error: ${snapshot.error}');
+                    } else if (snapshot.data!.isEmpty) {
+                      PieData noData = PieData(
+                          "No data available.", 1, "No data available.");
+                      List<PieData> noDataList = [noData];
+                      return PieChart(pieData: noDataList);
                     } else {
                       return PieChart(pieData: snapshot.data!);
                     }
@@ -79,16 +90,16 @@ class _MainPage extends State<MainPage> {
                   }
                 },
               ),
-              FutureBuilder<List<PieData>>(
+              FutureBuilder<List<LineData>>(
                 future: getLineList(currentLedgerID!),
                 builder: (BuildContext context,
-                    AsyncSnapshot<List<PieData>> snapshot) {
+                    AsyncSnapshot<List<LineData>> snapshot) {
                   if (snapshot.connectionState == ConnectionState.done) {
                     if (snapshot.hasError) {
                       print('Error: ${snapshot.error}');
                       return Text('Error: ${snapshot.error}');
                     } else {
-                      return PieChart(pieData: snapshot.data!);
+                      return LineChart(lineData: snapshot.data!);
                     }
                   } else {
                     return CircularProgressIndicator();
@@ -348,7 +359,117 @@ class _MainPage extends State<MainPage> {
     return pieData;
   }
 
-  getLineList(String s) {}
+  Future<List<LineData>> getLineList(String ledgerID) async {
+    return <LineData>[
+      LineData('Jan', -100000),
+      LineData('Feb', -40000),
+      LineData('Mar', 34000),
+      LineData('Apr', 60000),
+      LineData('May', 100000),
+      LineData('Jun', 70000),
+    ];
+  }
+
+  Future<void> checkForFutureTransactions(String ledgerID) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    CollectionReference transactions = firestore.collection('transactions');
+
+    Query userFutureTransactions = transactions
+        .where('ledgerID', isEqualTo: ledgerID)
+        .where('isDone', isEqualTo: false)
+        .where('isActive', isEqualTo: true);
+
+    QuerySnapshot snapshot = await userFutureTransactions.get();
+    snapshot.docs.forEach((DocumentSnapshot doc) {
+      DateTime targetDate = (doc['targetDate'] as Timestamp).toDate();
+      if (targetDate != DateTime(0)) {
+        int dateTimeCompare = targetDate.compareTo(DateTime.now());
+
+        if (dateTimeCompare <= 0) {
+          doc.reference.update({'isDone': true, 'targetDate': DateTime(0)});
+
+          if (doc['duration'] > 0) CreateFutureTransaction(doc);
+        }
+      }
+    });
+  }
+
+  int _daysInMonth(int year, int month) {
+    var date = DateTime(year, month);
+    var lastDay = DateTime(date.year, date.month + 1, 0);
+    return lastDay.day;
+  }
+
+  Future<void> CreateFutureTransaction(DocumentSnapshot doc) async {
+    String? currentLedgerID = await prefs.getString("ledgerID");
+    var newTransaction;
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    CollectionReference transactions = firestore.collection('transactions');
+    bool isDone = false;
+    DateTime targetDate = (doc['targetDate'] as Timestamp).toDate();
+    DateTime nextTargetDate = DateTime(0);
+    //   Period can be:
+    //   'For once',
+    //   'Every day'
+    //   'Every week',
+    //   'Every month',
+    //   'Every year'
+    if ('period' == 'Every day') {
+      nextTargetDate = targetDate.add(Duration(days: 1));
+    } else if ('period' == 'Every week') {
+      nextTargetDate = targetDate.add(Duration(days: 7));
+    } else if ('period' == 'Every month') {
+      nextTargetDate = targetDate
+          .add(Duration(days: _daysInMonth(targetDate.year, targetDate.month)));
+    } else if ('period' == 'Every year') {
+      nextTargetDate = targetDate.add(Duration(days: 365));
+    }
+    if (doc['duration'] - 1 <= 0) {
+      isDone = true;
+      nextTargetDate = DateTime(0);
+    }
+
+    try {
+      newTransaction = TransactionModel(
+          accountID: doc['accountID'],
+          ledgerID: doc['ledgerID'],
+          stockID: doc['stockID'],
+          transactionType: doc['transactionType'],
+          amount: doc['amount'],
+          totalPrice: doc['totalPrice'],
+          price: doc['price'],
+          transactionDetail: doc['transactionDetail'],
+          categoryName: doc['categoryName'],
+          period: doc['period'],
+          duration: doc['duration'] - 1,
+          targetDate: nextTargetDate,
+          isDone: isDone,
+          createDate: doc['createDate'],
+          updateDate: doc['updateDate'],
+          isActive: true);
+
+      DocumentReference transactionsDoc = await transactions.add({
+        'accountID': newTransaction.accountID,
+        'ledgerID': newTransaction.ledgerID,
+        'stockID': newTransaction.stockID,
+        'transactionType': newTransaction.transactionType,
+        'amount': newTransaction.amount,
+        'totalPrice': newTransaction.totalPrice,
+        'price': newTransaction.price,
+        'transactionDetail': newTransaction.transactionDetail,
+        'categoryName': newTransaction.categoryName,
+        'period': newTransaction.period,
+        'duration': newTransaction.duration,
+        'targetDate': newTransaction.targetDate,
+        'isDone': newTransaction.isDone,
+        'createDate': Timestamp.fromDate(newTransaction.createDate),
+        'updateDate': Timestamp.fromDate(newTransaction.updateDate),
+        'isActive': newTransaction.isActive
+      });
+    } catch (e) {
+      print('Error caught: $e');
+    }
+  }
 }
 
 Widget LatestExchangeRates() {

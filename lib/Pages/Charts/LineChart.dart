@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
 class LineChart extends StatefulWidget {
+  final List<LineData> lineData;
+
+  LineChart({required this.lineData});
+
   @override
   LineChartState createState() => LineChartState();
 }
@@ -22,31 +26,24 @@ class LineChartState extends State<LineChart> {
         height: 500,
         child: SfCartesianChart(
             // Initialize category axis
-            title: ChartTitle(text: 'Income'),
+            title: ChartTitle(text: 'Profit'),
             // Enable legend
             legend: Legend(isVisible: true),
             // Enable tooltip
             tooltipBehavior: TooltipBehavior(enable: true),
             primaryXAxis: CategoryAxis(),
-            series: <LineSeries<SalesData2, String>>[
-              LineSeries<SalesData2, String>(
+            series: <LineSeries<LineData, String>>[
+              LineSeries<LineData, String>(
                   // Bind data source
-                  dataSource: <SalesData2>[
-                    SalesData2('Jan', -100000),
-                    SalesData2('Feb', -40000),
-                    SalesData2('Mar', 34000),
-                    SalesData2('Apr', 60000),
-                    SalesData2('May', 100000),
-                    SalesData2('Jun', 70000),
-                  ],
-                  xValueMapper: (SalesData2 sales, _) => sales.year,
-                  yValueMapper: (SalesData2 sales, _) => sales.sales),
+                  dataSource: widget.lineData,
+                  xValueMapper: (LineData data, _) => data.month,
+                  yValueMapper: (LineData data, _) => data.profit),
             ]));
   }
 }
 
-class SalesData2 {
-  SalesData2(this.year, this.sales);
-  final String year;
-  final double sales;
+class LineData {
+  LineData(this.month, this.profit);
+  final String month;
+  final double profit;
 }
