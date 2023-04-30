@@ -44,9 +44,6 @@ class _MainPage extends State<MainPage> {
     ExchangerateRequester requester = new ExchangerateRequester();
     Future<double> rate = requester.getRate('EUR', 'TRY', 1000);
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Main Page'),
-      ),
       drawer: LeftDrawer(),
       body: SingleChildScrollView(
         scrollDirection: Axis.vertical,
@@ -82,7 +79,22 @@ class _MainPage extends State<MainPage> {
                   }
                 },
               ),
-              LineChart(),
+              FutureBuilder<List<PieData>>(
+                future: getLineList(currentLedgerID!),
+                builder: (BuildContext context,
+                    AsyncSnapshot<List<PieData>> snapshot) {
+                  if (snapshot.connectionState == ConnectionState.done) {
+                    if (snapshot.hasError) {
+                      print('Error: ${snapshot.error}');
+                      return Text('Error: ${snapshot.error}');
+                    } else {
+                      return PieChart(pieData: snapshot.data!);
+                    }
+                  } else {
+                    return CircularProgressIndicator();
+                  }
+                },
+              ),
               BarChart(),
               LatestExchangeRates()
             ].map((i) {
@@ -335,6 +347,8 @@ class _MainPage extends State<MainPage> {
 
     return pieData;
   }
+
+  getLineList(String s) {}
 }
 
 Widget LatestExchangeRates() {
