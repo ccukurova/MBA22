@@ -360,6 +360,8 @@ class _MainPage extends State<MainPage> {
   }
 
   Future<List<LineData>> getLineList(String ledgerID) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    CollectionReference transactions = firestore.collection('transactions');
     List<String> months = [
       "Jan",
       "Feb",
@@ -385,6 +387,10 @@ class _MainPage extends State<MainPage> {
       previousMonthOrder--;
     }
     selectedMonths = selectedMonths.reversed.toList();
+    Query userFutureTransactions = transactions
+        .where('ledgerID', isEqualTo: ledgerID)
+        .where('isActive', isEqualTo: true);
+
     return <LineData>[
       LineData('Jan', -100000),
       LineData('Feb', -40000),

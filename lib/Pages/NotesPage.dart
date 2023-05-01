@@ -104,143 +104,191 @@ class NotePageState extends State<NotePage> {
                             Map<String, dynamic> data =
                                 document.data() as Map<String, dynamic>;
                             bool showIcons = false;
-                            if (data['noteType' == 'Note'])
+                            if (data['noteType'] == 'Note')
+                              return InkWell(
+                                  onTap: () {},
+                                  child: ListTile(
+                                      title: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(data['noteType']),
+                                          Text(data['heading']),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              IconButton(
+                                                icon: Icon(Icons.more_vert),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    showModalBottomSheet(
+                                                      context: context,
+                                                      builder: (BuildContext
+                                                          context) {
+                                                        return Container(
+                                                          child: Column(
+                                                            mainAxisSize:
+                                                                MainAxisSize
+                                                                    .min,
+                                                            children: <Widget>[
+                                                              ListTile(
+                                                                leading: Icon(
+                                                                    Icons.edit),
+                                                                title: Text(
+                                                                    'Update'),
+                                                                onTap: () {
+                                                                  // do something
+                                                                  Navigator.pop(
+                                                                      context);
+                                                                  showNoteUpdaterDialog(
+                                                                      context,
+                                                                      document);
+                                                                },
+                                                              ),
+                                                              ListTile(
+                                                                leading: Icon(
+                                                                    Icons
+                                                                        .delete),
+                                                                title: Text(
+                                                                    'Delete'),
+                                                                onTap:
+                                                                    () async {
+                                                                  // do something
+                                                                  String
+                                                                      documentId =
+                                                                      document
+                                                                          .id;
+                                                                  await notes
+                                                                      .doc(
+                                                                          documentId)
+                                                                      .update({
+                                                                    'isActive':
+                                                                        false
+                                                                  });
+                                                                  await notes
+                                                                      .doc(
+                                                                          documentId)
+                                                                      .update({
+                                                                    'updateDate':
+                                                                        DateTime
+                                                                            .now()
+                                                                  });
+                                                                  Navigator.pop(
+                                                                      context);
+                                                                },
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        );
+                                                      },
+                                                    );
+                                                  });
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      subtitle: Column(children: [
+                                        Text(data['noteDetail']),
+                                        Text(DateFormat('dd-MM-yyyy – kk:mm')
+                                            .format(data['createDate']
+                                                .toDate()
+                                                .toLocal())),
+                                        SizedBox(height: 25)
+                                      ])));
+                            if (data['noteType'] == 'To do')
                               return InkWell(
                                 onTap: () {},
                                 child: ListTile(
-                                  title: Text(data['heading']),
-                                  subtitle: Text(data['noteDetail']),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        icon: Icon(Icons.more_vert),
-                                        onPressed: () {
-                                          setState(() {
-                                            showModalBottomSheet(
-                                              context: context,
-                                              builder: (BuildContext context) {
-                                                return Container(
-                                                  child: Column(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: <Widget>[
-                                                      ListTile(
-                                                        leading:
-                                                            Icon(Icons.edit),
-                                                        title: Text('Update'),
-                                                        onTap: () {
-                                                          // do something
-                                                          Navigator.pop(
-                                                              context);
-                                                          showNoteUpdaterDialog(
-                                                              context,
-                                                              document);
-                                                        },
-                                                      ),
-                                                      ListTile(
-                                                        leading:
-                                                            Icon(Icons.delete),
-                                                        title: Text('Delete'),
-                                                        onTap: () async {
-                                                          // do something
-                                                          String documentId =
-                                                              document.id;
-                                                          await notes
-                                                              .doc(documentId)
-                                                              .update({
-                                                            'isActive': false
-                                                          });
-                                                          await notes
-                                                              .doc(documentId)
-                                                              .update({
-                                                            'updateDate':
-                                                                DateTime.now()
-                                                          });
-                                                          Navigator.pop(
-                                                              context);
-                                                        },
-                                                      ),
-                                                    ],
-                                                  ),
-                                                );
-                                              },
-                                            );
-                                          });
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            if (data['noteType' == 'To do'])
-                              return InkWell(
-                                onTap: () {},
-                                child: ListTile(
-                                  title: Text(data['heading']),
-                                  subtitle: Text(data['noteDetail']),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        icon: Icon(Icons.more_vert),
-                                        onPressed: () {
-                                          setState(() {
-                                            showModalBottomSheet(
-                                              context: context,
-                                              builder: (BuildContext context) {
-                                                return Container(
-                                                  child: Column(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: <Widget>[
-                                                      ListTile(
-                                                        leading:
-                                                            Icon(Icons.edit),
-                                                        title: Text('Update'),
-                                                        onTap: () {
-                                                          // do something
-                                                          Navigator.pop(
-                                                              context);
-                                                          showNoteUpdaterDialog(
-                                                              context,
-                                                              document);
-                                                        },
-                                                      ),
-                                                      ListTile(
-                                                        leading:
-                                                            Icon(Icons.delete),
-                                                        title: Text('Delete'),
-                                                        onTap: () async {
-                                                          // do something
-                                                          String documentId =
-                                                              document.id;
-                                                          await notes
-                                                              .doc(documentId)
-                                                              .update({
-                                                            'isActive': false
-                                                          });
-                                                          await notes
-                                                              .doc(documentId)
-                                                              .update({
-                                                            'updateDate':
-                                                                DateTime.now()
-                                                          });
-                                                          Navigator.pop(
-                                                              context);
-                                                        },
-                                                      ),
-                                                    ],
-                                                  ),
-                                                );
-                                              },
-                                            );
-                                          });
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                                    title: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(data['noteType']),
+                                          Text(data['heading']),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              IconButton(
+                                                icon: Icon(Icons.more_vert),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    showModalBottomSheet(
+                                                      context: context,
+                                                      builder: (BuildContext
+                                                          context) {
+                                                        return Container(
+                                                          child: Column(
+                                                            mainAxisSize:
+                                                                MainAxisSize
+                                                                    .min,
+                                                            children: <Widget>[
+                                                              ListTile(
+                                                                leading: Icon(
+                                                                    Icons.edit),
+                                                                title: Text(
+                                                                    'Update'),
+                                                                onTap: () {
+                                                                  // do something
+                                                                  Navigator.pop(
+                                                                      context);
+                                                                  showNoteUpdaterDialog(
+                                                                      context,
+                                                                      document);
+                                                                },
+                                                              ),
+                                                              ListTile(
+                                                                leading: Icon(
+                                                                    Icons
+                                                                        .delete),
+                                                                title: Text(
+                                                                    'Delete'),
+                                                                onTap:
+                                                                    () async {
+                                                                  // do something
+                                                                  String
+                                                                      documentId =
+                                                                      document
+                                                                          .id;
+                                                                  await notes
+                                                                      .doc(
+                                                                          documentId)
+                                                                      .update({
+                                                                    'isActive':
+                                                                        false
+                                                                  });
+                                                                  await notes
+                                                                      .doc(
+                                                                          documentId)
+                                                                      .update({
+                                                                    'updateDate':
+                                                                        DateTime
+                                                                            .now()
+                                                                  });
+                                                                  Navigator.pop(
+                                                                      context);
+                                                                },
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        );
+                                                      },
+                                                    );
+                                                  });
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                        ]),
+                                    subtitle: Column(children: [
+                                      Text(data['noteDetail']),
+                                      Text(DateFormat('dd-MM-yyyy – kk:mm')
+                                          .format(data['createDate']
+                                              .toDate()
+                                              .toLocal())),
+                                      SizedBox(height: 25)
+                                    ])),
                               );
                           },
                         );
@@ -282,7 +330,7 @@ class NoteAdderState extends State<NoteAdder> {
   final _formKey = GlobalKey<FormState>();
   String heading = '';
   String noteDetail = '';
-  String noteType = 'Note';
+  String noteType = '';
   final SharedPreferencesManager prefs = SharedPreferencesManager();
   DateTime _selectedDate = DateTime.now(); // Default selected date
   TimeOfDay _selectedTime = TimeOfDay.fromDateTime(DateTime.now());
@@ -353,7 +401,7 @@ class NoteAdderState extends State<NoteAdder> {
                     });
                   },
                   child: Text(
-                    'Add',
+                    'Note',
                     style: TextStyle(
                       decoration: selectedNoteType == 'Note'
                           ? TextDecoration.underline
@@ -552,6 +600,7 @@ class NoteAdderState extends State<NoteAdder> {
       'ledgerID': newNote.ledgerID,
       'heading': newNote.heading,
       'noteDetail': newNote.noteDetail,
+      'noteType': newNote.noteType,
       'targetDate': Timestamp.fromDate(newNote.targetDate),
       'period': newNote.period,
       'duration': newNote.duration,
