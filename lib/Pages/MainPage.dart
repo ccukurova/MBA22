@@ -360,6 +360,31 @@ class _MainPage extends State<MainPage> {
   }
 
   Future<List<LineData>> getLineList(String ledgerID) async {
+    List<String> months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ];
+    int previousMonthOrder = DateTime.now().month - 1;
+    String previousMonth = months.elementAt(previousMonthOrder - 1);
+    List<String> selectedMonths = [];
+    for (int monthCounter = 0; monthCounter < 6; monthCounter++) {
+      if (previousMonthOrder == 0) {
+        previousMonthOrder = 12;
+      }
+      selectedMonths.add(months.elementAt(previousMonthOrder - 1));
+      previousMonthOrder--;
+    }
+    selectedMonths = selectedMonths.reversed.toList();
     return <LineData>[
       LineData('Jan', -100000),
       LineData('Feb', -40000),

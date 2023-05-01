@@ -707,7 +707,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
       FirebaseFirestore.instance.collection('transactions');
   final _formKey = GlobalKey<FormState>();
 
-  String unit = '';
+  String period = '';
   String transactionDetail = '';
   double totalPrice = 0.0;
   final SharedPreferencesManager prefs = SharedPreferencesManager();
@@ -731,7 +731,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
   TextEditingController duration = TextEditingController();
 
   String selectedDurationText = "∞";
-  int selectedDuration = 2;
+  int selectedDuration = 1;
 
   @override
   void initState() {
@@ -795,7 +795,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
     final dateFormatter = DateFormat('dd/MM/yyyy');
     // Time formatter for displaying the selected time
     final timeFormatter = DateFormat('HH:mm');
-    const List<String> unitList = <String>[
+    const List<String> periodList = <String>[
       'For once',
       'Every day',
       'Every week',
@@ -1071,11 +1071,11 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                         // This is called when the user selects an item.
                         setState(() {
                           dropDownValueUnit = value!;
-                          unit = value;
-                          print(value + dropDownValueUnit + unit);
+                          period = value;
+                          print(value + dropDownValueUnit + period);
                         });
                       },
-                      items: unitList
+                      items: periodList
                           .map<DropdownMenuItem<String>>((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
@@ -1083,6 +1083,42 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                         );
                       }).toList(),
                     ),
+                    SizedBox(height: 25.0),
+                    if (dropDownValueUnit != 'For once')
+                      Container(
+                        child: Row(
+                          children: [
+                            Text('Duration'),
+                            TextButton(
+                              onPressed: () => {
+                                if (selectedDuration > 1)
+                                  {
+                                    selectedDuration--,
+                                    duration.text = selectedDuration.toString()
+                                  }
+                                else if (selectedDuration == 1)
+                                  {duration.text = '∞'}
+                              },
+                              child: Text('<'),
+                            ),
+                            Expanded(
+                              child: TextFormField(
+                                controller: duration,
+                              ),
+                            ),
+                            TextButton(
+                                onPressed: () => {
+                                      if (selectedDuration + 1 >= 1)
+                                        {
+                                          selectedDuration++,
+                                          duration.text =
+                                              selectedDuration.toString()
+                                        }
+                                    },
+                                child: Text('>')),
+                          ],
+                        ),
+                      ),
                     SizedBox(height: 25.0),
                     ElevatedButton(
                       onPressed: () {
@@ -1102,7 +1138,9 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                               totalPrice,
                               transactionDetail,
                               selectedSourceAccountID,
-                              targetDate);
+                              targetDate,
+                              selectedDuration,
+                              period);
                           Navigator.pop(context);
                         }
                       },
@@ -1283,11 +1321,11 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                         // This is called when the user selects an item.
                         setState(() {
                           dropDownValueUnit = value!;
-                          unit = value;
-                          print(value + dropDownValueUnit + unit);
+                          period = value;
+                          print(value + dropDownValueUnit + period);
                         });
                       },
-                      items: unitList
+                      items: periodList
                           .map<DropdownMenuItem<String>>((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
@@ -1303,12 +1341,12 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                             Text('Duration'),
                             TextButton(
                               onPressed: () => {
-                                if (selectedDuration - 1 >= 2)
+                                if (selectedDuration > 1)
                                   {
                                     selectedDuration--,
                                     duration.text = selectedDuration.toString()
                                   }
-                                else if (selectedDuration == 2)
+                                else if (selectedDuration == 1)
                                   {duration.text = '∞'}
                               },
                               child: Text('<'),
@@ -1320,7 +1358,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                             ),
                             TextButton(
                                 onPressed: () => {
-                                      if (selectedDuration + 1 > 2)
+                                      if (selectedDuration >= 1)
                                         {
                                           selectedDuration++,
                                           duration.text =
@@ -1361,7 +1399,9 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                                 totalPrice,
                                 transactionDetail,
                                 selectedSourceAccount,
-                                targetDate);
+                                targetDate,
+                                selectedDuration,
+                                period);
                             Navigator.pop(context);
                           } else {
                             sourceAccountValidator =
@@ -1385,7 +1425,9 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
       double _totalPrice,
       String _transactionDetail,
       String _selectedSourceAccount,
-      DateTime _targetDate) async {
+      DateTime _targetDate,
+      int _selectedDuration,
+      String _period) async {
     String? currentAccountID = await prefs.getString("accountID");
     String? currentLedgerID = await prefs.getString("ledgerID");
     var newAccountTransaction;
@@ -1393,6 +1435,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
     CollectionReference accounts = firestore.collection('accounts');
     String sourceAccountID = "";
     String? choosenCategory = await prefs.getString("choosenCategory");
+    choosenCategory = choosenCategory ?? "";
     if (_selectedTransactionType == 'Collection' ||
         _selectedTransactionType == 'Payment') {
       final QuerySnapshot sourceAccountQuerySnapshot = await accounts
@@ -1426,8 +1469,8 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
           price: 0,
           transactionDetail: _transactionDetail,
           categoryName: choosenCategory!,
-          period: '',
-          duration: 0,
+          period: _period,
+          duration: _selectedDuration,
           targetDate: _targetDate,
           isDone: true,
           createDate: DateTime.now(),

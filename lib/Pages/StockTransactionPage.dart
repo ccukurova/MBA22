@@ -441,8 +441,11 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
   CollectionReference stockTransactions =
       FirebaseFirestore.instance.collection('transactions');
   final _formKey = GlobalKey<FormState>();
+  String selectedDurationText = "∞";
+  int selectedDuration = 1;
+  TextEditingController duration = TextEditingController();
 
-  String unit = 'For once';
+  String period = 'For once';
   String transactionDetail = '';
   double amount = 0.0;
   double totalPrice = 0.0;
@@ -544,7 +547,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
     final dateFormatter = DateFormat('dd/MM/yyyy');
     // Time formatter for displaying the selected time
     final timeFormatter = DateFormat('HH:mm');
-    const List<String> unitList = <String>[
+    const List<String> periodList = <String>[
       'For once',
       'Every week',
       'Every month',
@@ -815,11 +818,11 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                         // This is called when the user selects an item.
                         setState(() {
                           dropDownValueUnit = value!;
-                          unit = value;
-                          print(value + dropDownValueUnit + unit);
+                          period = value;
+                          print(value + dropDownValueUnit + period);
                         });
                       },
-                      items: unitList
+                      items: periodList
                           .map<DropdownMenuItem<String>>((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
@@ -828,8 +831,51 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                       }).toList(),
                     ),
                     SizedBox(height: 25.0),
+                    if (dropDownValueUnit != 'For once')
+                      Container(
+                        child: Row(
+                          children: [
+                            Text('Duration'),
+                            TextButton(
+                              onPressed: () => {
+                                if (selectedDuration > 1)
+                                  {
+                                    selectedDuration--,
+                                    duration.text = selectedDuration.toString()
+                                  }
+                                else if (selectedDuration == 1)
+                                  {duration.text = '∞'}
+                              },
+                              child: Text('<'),
+                            ),
+                            Expanded(
+                              child: TextFormField(
+                                controller: duration,
+                              ),
+                            ),
+                            TextButton(
+                                onPressed: () => {
+                                      if (selectedDuration + 1 >= 1)
+                                        {
+                                          selectedDuration++,
+                                          duration.text =
+                                              selectedDuration.toString()
+                                        }
+                                    },
+                                child: Text('>')),
+                          ],
+                        ),
+                      ),
+                    SizedBox(height: 25.0),
                     ElevatedButton(
                       onPressed: () {
+                        DateTime targetDate = DateTime(
+                          _selectedDate.year,
+                          _selectedDate.month,
+                          _selectedDate.day,
+                          _selectedTime.hour,
+                          _selectedTime.minute,
+                        );
                         String selectedSourceAccountID =
                             sourceAccountController.text;
                         String selectedExternalAccountID =
@@ -843,7 +889,10 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                               price,
                               transactionDetail,
                               selectedSourceAccountID,
-                              selectedExternalAccountID);
+                              selectedExternalAccountID,
+                              selectedDuration,
+                              targetDate,
+                              period);
                           Navigator.pop(context);
                         }
                       },
@@ -1120,11 +1169,11 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                         // This is called when the user selects an item.
                         setState(() {
                           dropDownValueUnit = value!;
-                          unit = value;
-                          print(value + dropDownValueUnit + unit);
+                          period = value;
+                          print(value + dropDownValueUnit + period);
                         });
                       },
-                      items: unitList
+                      items: periodList
                           .map<DropdownMenuItem<String>>((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
@@ -1133,8 +1182,51 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                       }).toList(),
                     ),
                     SizedBox(height: 25.0),
+                    if (dropDownValueUnit != 'For once')
+                      Container(
+                        child: Row(
+                          children: [
+                            Text('Duration'),
+                            TextButton(
+                              onPressed: () => {
+                                if (selectedDuration > 1)
+                                  {
+                                    selectedDuration--,
+                                    duration.text = selectedDuration.toString()
+                                  }
+                                else if (selectedDuration == 1)
+                                  {duration.text = '∞'}
+                              },
+                              child: Text('<'),
+                            ),
+                            Expanded(
+                              child: TextFormField(
+                                controller: duration,
+                              ),
+                            ),
+                            TextButton(
+                                onPressed: () => {
+                                      if (selectedDuration + 1 >= 1)
+                                        {
+                                          selectedDuration++,
+                                          duration.text =
+                                              selectedDuration.toString()
+                                        }
+                                    },
+                                child: Text('>')),
+                          ],
+                        ),
+                      ),
+                    SizedBox(height: 25.0),
                     ElevatedButton(
                       onPressed: () {
+                        DateTime targetDate = DateTime(
+                          _selectedDate.year,
+                          _selectedDate.month,
+                          _selectedDate.day,
+                          _selectedTime.hour,
+                          _selectedTime.minute,
+                        );
                         String selectedSourceAccount =
                             sourceAccountController.text;
                         String selectedExternalAccount =
@@ -1172,7 +1264,10 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                                 totalPrice,
                                 transactionDetail,
                                 selectedSourceAccount,
-                                selectedExternalAccount);
+                                selectedExternalAccount,
+                                selectedDuration,
+                                targetDate,
+                                period);
                             Navigator.pop(context);
                           } else {
                             sourceAccountValidator =
@@ -1198,7 +1293,10 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
       double _totalPrice,
       String _transactionDetail,
       String _selectedSourceAccount,
-      String _selectedExternalAccount) async {
+      String _selectedExternalAccount,
+      int _selectedDuration,
+      DateTime _targetDate,
+      String _period) async {
     String? currentLedgerID = await prefs.getString("ledgerID");
     String? currentStockID = await prefs.getString("stockID");
     var newAddStockTransaction;
@@ -1208,6 +1306,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
     String sourceAccountID = "";
     String externalAccountID = "";
     String? choosenCategory = await prefs.getString("choosenCategory");
+    choosenCategory = choosenCategory ?? "";
 
     if (_selectedTransactionType == 'Buy' ||
         _selectedTransactionType == 'Sell') {
@@ -1261,9 +1360,9 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
           price: _price,
           transactionDetail: _transactionDetail,
           categoryName: choosenCategory!,
-          period: '',
-          duration: 0,
-          targetDate: DateTime.now(),
+          period: _period,
+          duration: _selectedDuration,
+          targetDate: _targetDate,
           isDone: true,
           createDate: DateTime.now(),
           updateDate: DateTime.now(),
