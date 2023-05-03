@@ -2,14 +2,28 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ExchangerateRequester {
-  static const _baseUrl = 'https://api.exchangerate.host/latest';
+  static const _baseUrl = 'https://api.exchangerate.host';
 
-  Future<Map<String, double>> requestAll(String base) async {
-    final response = await http.get(Uri.parse('${_baseUrl}?base=${base}'));
+  Future<Map<String, dynamic>> requestAll(String base) async {
+    final response =
+        await http.get(Uri.parse('${_baseUrl}/latest?base=${base}'));
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
       final rates =
-          Map<String, double>.from(data['rates'] as Map<String, dynamic>);
+          Map<String, dynamic>.from(data['rates'] as Map<String, dynamic>);
+
+      return rates;
+    } else {
+      throw Exception('Failed to load exchange rates');
+    }
+  }
+
+  Future<Map<String, dynamic>> getCurrencyNames() async {
+    final response = await http.get(Uri.parse('${_baseUrl}/symbols'));
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = json.decode(response.body);
+      final rates =
+          Map<String, dynamic>.from(data['symbols'] as Map<String, dynamic>);
 
       return rates;
     } else {

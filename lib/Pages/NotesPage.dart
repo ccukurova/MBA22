@@ -283,10 +283,18 @@ class NotePageState extends State<NotePage> {
                                         ]),
                                     subtitle: Column(children: [
                                       Text(data['noteDetail']),
-                                      Text(DateFormat('dd-MM-yyyy – kk:mm')
-                                          .format(data['createDate']
-                                              .toDate()
-                                              .toLocal())),
+                                      Row(children: [
+                                        if (data['targetDate'] == DateTime(0))
+                                          Text(DateFormat('dd-MM-yyyy – kk:mm')
+                                              .format(data['createDate']
+                                                  .toDate()
+                                                  .toLocal())),
+                                        if (data['targetDate'] != DateTime(0))
+                                          Text(DateFormat('dd-MM-yyyy – kk:mm')
+                                              .format(data['targetDate']
+                                                  .toDate()
+                                                  .toLocal())),
+                                      ]),
                                       SizedBox(height: 25)
                                     ])),
                               );
@@ -336,6 +344,10 @@ class NoteAdderState extends State<NoteAdder> {
   TimeOfDay _selectedTime = TimeOfDay.fromDateTime(DateTime.now());
   DateTime targetDate = DateTime.now();
   String selectedNoteType = 'Note';
+  TextEditingController duration = TextEditingController();
+
+  String selectedDurationText = "∞";
+  int selectedDuration = 1;
 
   String dropDownValueNoteType = 'Note';
 
@@ -346,8 +358,7 @@ class NoteAdderState extends State<NoteAdder> {
     'Every year'
   ];
   String selectedPeriod = 'For once';
-  String periodDropDownValue = 'For once';
-
+  String dropDownValuePeriod = 'For once';
   void _onDateSelected(DateTime selected) {
     setState(() {
       _selectedDate = selected;
@@ -368,6 +379,7 @@ class NoteAdderState extends State<NoteAdder> {
     final dateFormatter = DateFormat('dd/MM/yyyy');
     // Time formatter for displaying the selected time
     final timeFormatter = DateFormat('HH:mm');
+    duration.text = selectedDurationText;
 
     return Stack(children: [
       Row(
@@ -464,6 +476,8 @@ class NoteAdderState extends State<NoteAdder> {
                   ),
                   SizedBox(height: 16.0),
                   TextFormField(
+                    maxLines: 3,
+                    textAlignVertical: TextAlignVertical.bottom,
                     decoration: InputDecoration(
                       labelText: 'Details',
                       border: OutlineInputBorder(),
@@ -529,7 +543,7 @@ class NoteAdderState extends State<NoteAdder> {
                         ),
                         SizedBox(height: 16),
                         DropdownButton<String>(
-                          value: periodDropDownValue,
+                          value: dropDownValuePeriod,
                           icon: const Icon(Icons.arrow_downward),
                           elevation: 16,
                           style: const TextStyle(color: Colors.deepPurple),
@@ -540,7 +554,7 @@ class NoteAdderState extends State<NoteAdder> {
                           onChanged: (String? value) {
                             // This is called when the user selects an item.
                             setState(() {
-                              periodDropDownValue = value!;
+                              dropDownValuePeriod = value!;
                               selectedPeriod = value;
                             });
                           },
@@ -552,6 +566,43 @@ class NoteAdderState extends State<NoteAdder> {
                             );
                           }).toList(),
                         ),
+                        SizedBox(height: 25.0),
+                        if (dropDownValuePeriod != 'For once')
+                          Container(
+                            child: Row(
+                              children: [
+                                Text('Duration'),
+                                TextButton(
+                                  onPressed: () => {
+                                    if (selectedDuration > 1)
+                                      {
+                                        selectedDuration--,
+                                        duration.text =
+                                            selectedDuration.toString()
+                                      }
+                                    else if (selectedDuration == 1)
+                                      {duration.text = '∞'}
+                                  },
+                                  child: Text('<'),
+                                ),
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: duration,
+                                  ),
+                                ),
+                                TextButton(
+                                    onPressed: () => {
+                                          if (selectedDuration >= 1)
+                                            {
+                                              selectedDuration++,
+                                              duration.text =
+                                                  selectedDuration.toString()
+                                            }
+                                        },
+                                    child: Text('>')),
+                              ],
+                            ),
+                          ),
                       ],
                     ),
                   SizedBox(height: 25.0),

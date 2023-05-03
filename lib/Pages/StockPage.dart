@@ -225,7 +225,28 @@ class StockAdderState extends State<StockAdder> {
 
   @override
   Widget build(BuildContext context) {
-    const List<String> unitList = <String>['Piece', 'kilogram'];
+    const List<String> unitList = <String>[
+      'Piece',
+      'Pair',
+      'Box',
+      'Miligram',
+      'Gram',
+      'Kilogram',
+      'Ton',
+      'Mililiter',
+      'Liter',
+      'Kiloliter',
+      'Milimeters',
+      'Cantimeters',
+      'Meters',
+      'Kilometers',
+      'Square meters',
+      'Cubic meters',
+      'Inch',
+      'Foot',
+      'Yard',
+      'Mile'
+    ];
 
     return Stack(children: [
       Row(

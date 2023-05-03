@@ -4,6 +4,7 @@ import 'package:MBA22/Models/AccountModel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Helpers/SharedPreferencesManager.dart';
 import 'package:MBA22/Models/LedgerModel.dart';
+import '../Services/RatesRequester.dart';
 import 'MainPage.dart';
 import 'AccountTransactionPage.dart';
 
@@ -37,6 +38,11 @@ class _AccountsPage extends State<AccountsPage> {
   Future<void> setAccountID(DocumentSnapshot document) async {
     final accountID = document.id;
     await prefs.setString("accountID", accountID);
+  }
+
+  Future<void> setAccountType(DocumentSnapshot document) async {
+    final accountType = document.get('accountType');
+    await prefs.setString("accountType", accountType);
   }
 
   void showAccountAdderDialog(BuildContext context) async {
@@ -122,9 +128,13 @@ class _AccountsPage extends State<AccountsPage> {
                               },
                               child: ListTile(
                                 title: Text(data['accountName']),
-                                subtitle: Text(data['unit']),
+                                subtitle: Row(children: [
+                                  Text('${data['accountType']}/'),
+                                  Text(data['unit'])
+                                ]),
                                 onTap: () {
                                   setAccountID(document);
+                                  setAccountType(document);
                                   Navigator.push(
                                       context,
                                       MaterialPageRoute(
@@ -288,6 +298,10 @@ class _AccountsPage extends State<AccountsPage> {
         balance += transactionData['totalPrice'];
       } else if (transactionData!['transactionType'] == 'Decrease') {
         balance -= transactionData['totalPrice'];
+      } else if (transactionData!['transactionType'] == 'Income') {
+        balance += transactionData['totalPrice'];
+      } else if (transactionData!['transactionType'] == 'Outcome') {
+        balance -= transactionData['totalPrice'];
       }
     });
 
@@ -316,7 +330,9 @@ class _AccountAdder extends State<AccountAdder> {
   @override
   Widget build(BuildContext context) {
     const List<String> accountTypeList = <String>['Internal', 'External'];
-    const List<String> unitList = <String>['TRY', 'USD'];
+    ExchangerateRequester requester = new ExchangerateRequester();
+    final Map<String, String> descriptions = requester.getDescriptions();
+    final List<String> unitList = descriptions.keys.toList();
 
     return Stack(children: [
       Row(

@@ -118,7 +118,9 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                             bool showIcons = false;
                             String documentId = document.id;
                             if (data['transactionType'] == 'Increase' ||
-                                data['transactionType'] == 'Decrease') {
+                                data['transactionType'] == 'Decrease' ||
+                                data['transactionType'] == 'Income' ||
+                                data['transactionType'] == 'Outcome') {
                               return InkWell(
                                 onTap: () {
                                   // Go to transaction details
@@ -128,7 +130,8 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Expanded(
-                                          child: Text(data['transactionType']),
+                                          child: Text(data['transactionType'],
+                                              style: TextStyle(fontSize: 14)),
                                           flex: 2),
                                       Expanded(
                                           flex: 6,
@@ -147,6 +150,23 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                   ),
                                                 if (data['transactionType'] ==
                                                     'Decrease')
+                                                  Text(
+                                                    '-${data['totalPrice'].toString()}',
+                                                    style: TextStyle(
+                                                        color: Colors.red,
+                                                        fontSize: 20),
+                                                  ),
+                                                if (data['transactionType'] ==
+                                                    'Income')
+                                                  Text(
+                                                    '+${data['totalPrice'].toString()}',
+                                                    style: TextStyle(
+                                                        color: Colors.green,
+                                                        fontSize: 20),
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                if (data['transactionType'] ==
+                                                    'Outcome')
                                                   Text(
                                                     '-${data['totalPrice'].toString()}',
                                                     style: TextStyle(
@@ -251,7 +271,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                     Expanded(
                                         child: Text(
                                           '${data['transactionType']}',
-                                          style: TextStyle(fontSize: 16),
+                                          style: TextStyle(fontSize: 14),
                                         ),
                                         flex: 2),
                                     FutureBuilder<DocumentSnapshot>(
@@ -697,7 +717,7 @@ Future<String> getAccountNameByID(String _accountID) async {
 }
 
 class AccountTransactionAdder extends StatefulWidget {
-  AccountTransactionAdder();
+  const AccountTransactionAdder({super.key});
   @override
   AccountTransactionAdderState createState() => AccountTransactionAdderState();
 }
@@ -712,13 +732,11 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
   double totalPrice = 0.0;
   final SharedPreferencesManager prefs = SharedPreferencesManager();
 
-  String dropDownValueUnit = 'For once';
+  String dropDownValuePeriod = 'For once';
   String selectedTransactionType = 'Increase';
 
   String? currentLedgerID;
 
-  TextEditingController sourceAccountController = TextEditingController();
-  TextEditingController externalAccountController = TextEditingController();
   String sourceAccountValidator = "";
   String selectedCategory = "Choose a category";
 
@@ -727,7 +745,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
       TimeOfDay.fromDateTime(DateTime.now()); // Default selected time
 
   String? currentAccountID;
-
+  String? accountType;
   TextEditingController duration = TextEditingController();
 
   String selectedDurationText = "∞";
@@ -740,6 +758,15 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
     prefs.getString("accountID").then((value) {
       setState(() {
         currentAccountID = value;
+      });
+    });
+
+    prefs.getString("accountType").then((value) {
+      setState(() {
+        accountType = value;
+        if (accountType == "Internal") {
+          selectedTransactionType = 'Income';
+        }
       });
     });
   }
@@ -758,33 +785,28 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
     });
   }
 
-  @override
-  void dispose() {
-    sourceAccountController.dispose(); // Dispose the controller properly
-    super.dispose();
-  }
-
-  Future<List<String>>? getInternalAccountNames() async {
+  Stream<List<String>> getInternalAccountNames() {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     CollectionReference accounts = firestore.collection('accounts');
 
-    Query userAccountsQuery = accounts
+    return accounts
         .where('ledgerID', isEqualTo: currentLedgerID)
         .where('isActive', isEqualTo: true)
         .where('accountType', isEqualTo: 'Internal')
-        .orderBy('updateDate', descending: true);
-
-    List<String> accountNames = [];
-    QuerySnapshot querySnapshot = await userAccountsQuery.get();
-    for (DocumentSnapshot documentSnapshot in querySnapshot.docs) {
-      Map<String, dynamic>? data =
-          documentSnapshot.data() as Map<String, dynamic>?;
-      if (data != null) {
-        String accountName = data['accountName'];
-        accountNames.add(accountName);
+        .orderBy('updateDate', descending: true)
+        .snapshots()
+        .map((QuerySnapshot querySnapshot) {
+      List<String> accountNames = [];
+      for (DocumentSnapshot documentSnapshot in querySnapshot.docs) {
+        Map<String, dynamic>? data =
+            documentSnapshot.data() as Map<String, dynamic>?;
+        if (data != null) {
+          String accountName = data['accountName'];
+          accountNames.add(accountName);
+        }
       }
-    }
-    return accountNames;
+      return accountNames;
+    });
   }
 
   @override
@@ -804,6 +826,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
     ];
     duration.text = '∞';
 
+    TextEditingController sourceAccountController = TextEditingController();
     return Stack(children: [
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -826,109 +849,166 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
-              TextButton(
-                onPressed: () {},
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      // Change the text style when clicked
-                      selectedTransactionType = 'Increase';
-                    });
-                  },
-                  child: Text(
-                    'Increase',
-                    style: TextStyle(
-                      decoration: selectedTransactionType == 'Increase'
-                          ? TextDecoration.underline
-                          : TextDecoration.none,
-                      color: selectedTransactionType == 'Increase'
-                          ? Color.fromARGB(255, 33, 236, 243)
-                          : Colors.blue, // Change color when selected
-                      fontSize:
-                          selectedTransactionType == 'Increase' ? 22.0 : 18.0,
+              if (accountType == 'External')
+                TextButton(
+                  onPressed: () {},
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        // Change the text style when clicked
+                        selectedTransactionType = 'Increase';
+                      });
+                    },
+                    child: Text(
+                      'Increase',
+                      style: TextStyle(
+                        decoration: selectedTransactionType == 'Increase'
+                            ? TextDecoration.underline
+                            : TextDecoration.none,
+                        color: selectedTransactionType == 'Increase'
+                            ? Color.fromARGB(255, 33, 236, 243)
+                            : Colors.blue, // Change color when selected
+                        fontSize:
+                            selectedTransactionType == 'Increase' ? 22.0 : 18.0,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              TextButton(
-                onPressed: () {},
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      // Change the text style when clicked
-                      selectedTransactionType = 'Decrease';
-                    });
-                  },
-                  child: Text(
-                    'Decrease',
-                    style: TextStyle(
-                      decoration: selectedTransactionType == 'Decrease'
-                          ? TextDecoration.underline
-                          : TextDecoration.none, // Add underline
-                      color: selectedTransactionType == 'Decrease'
-                          ? Color.fromARGB(255, 33, 236, 243)
-                          : Colors.blue, // Change color when selected
-                      fontSize:
-                          selectedTransactionType == 'Decrease' ? 22.0 : 18.0,
+              if (accountType == 'External')
+                TextButton(
+                  onPressed: () {},
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        // Change the text style when clicked
+                        selectedTransactionType = 'Decrease';
+                      });
+                    },
+                    child: Text(
+                      'Decrease',
+                      style: TextStyle(
+                        decoration: selectedTransactionType == 'Decrease'
+                            ? TextDecoration.underline
+                            : TextDecoration.none, // Add underline
+                        color: selectedTransactionType == 'Decrease'
+                            ? Color.fromARGB(255, 33, 236, 243)
+                            : Colors.blue, // Change color when selected
+                        fontSize:
+                            selectedTransactionType == 'Decrease' ? 22.0 : 18.0,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              TextButton(
-                onPressed: () {},
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      // Change the text style when clicked
-                      selectedTransactionType = 'Collection';
-                    });
-                  },
-                  child: Text(
-                    'Collection',
-                    style: TextStyle(
-                      decoration: selectedTransactionType == 'Collection'
-                          ? TextDecoration.underline
-                          : TextDecoration.none, // Add underline
-                      color: selectedTransactionType == 'Collection'
-                          ? Color.fromARGB(255, 33, 236, 243)
-                          : Colors.blue, // Change color when selected
-                      fontSize:
-                          selectedTransactionType == 'Collection' ? 22.0 : 18.0,
+              if (accountType == 'Internal')
+                TextButton(
+                  onPressed: () {},
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        // Change the text style when clicked
+                        selectedTransactionType = 'Income';
+                      });
+                    },
+                    child: Text(
+                      'Income',
+                      style: TextStyle(
+                        decoration: selectedTransactionType == 'Income'
+                            ? TextDecoration.underline
+                            : TextDecoration.none, // Add underline
+                        color: selectedTransactionType == 'Income'
+                            ? Color.fromARGB(255, 33, 236, 243)
+                            : Colors.blue, // Change color when selected
+                        fontSize:
+                            selectedTransactionType == 'Income' ? 22.0 : 18.0,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              TextButton(
-                onPressed: () {},
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      // Change the text style when clicked
-                      selectedTransactionType = 'Payment';
-                    });
-                  },
-                  child: Text(
-                    'Payment',
-                    style: TextStyle(
-                      decoration: selectedTransactionType == 'Payment'
-                          ? TextDecoration.underline
-                          : TextDecoration.none, // Add underline
-                      color: selectedTransactionType == 'Payment'
-                          ? Color.fromARGB(255, 33, 236, 243)
-                          : Colors.blue, // Change color when selected
-                      fontSize:
-                          selectedTransactionType == 'Payment' ? 22.0 : 18.0,
+              if (accountType == 'Internal')
+                TextButton(
+                  onPressed: () {},
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        // Change the text style when clicked
+                        selectedTransactionType = 'Outcome';
+                      });
+                    },
+                    child: Text(
+                      'Outcome',
+                      style: TextStyle(
+                        decoration: selectedTransactionType == 'Outcome'
+                            ? TextDecoration.underline
+                            : TextDecoration.none, // Add underline
+                        color: selectedTransactionType == 'Outcome'
+                            ? Color.fromARGB(255, 33, 236, 243)
+                            : Colors.blue, // Change color when selected
+                        fontSize:
+                            selectedTransactionType == 'Outcome' ? 22.0 : 18.0,
+                      ),
                     ),
                   ),
                 ),
-              ),
+              if (accountType == 'External')
+                TextButton(
+                  onPressed: () {},
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        // Change the text style when clicked
+                        selectedTransactionType = 'Collection';
+                      });
+                    },
+                    child: Text(
+                      'Collection',
+                      style: TextStyle(
+                        decoration: selectedTransactionType == 'Collection'
+                            ? TextDecoration.underline
+                            : TextDecoration.none, // Add underline
+                        color: selectedTransactionType == 'Collection'
+                            ? Color.fromARGB(255, 33, 236, 243)
+                            : Colors.blue, // Change color when selected
+                        fontSize: selectedTransactionType == 'Collection'
+                            ? 22.0
+                            : 18.0,
+                      ),
+                    ),
+                  ),
+                ),
+              if (accountType == 'External')
+                TextButton(
+                  onPressed: () {},
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        // Change the text style when clicked
+                        selectedTransactionType = 'Payment';
+                      });
+                    },
+                    child: Text(
+                      'Payment',
+                      style: TextStyle(
+                        decoration: selectedTransactionType == 'Payment'
+                            ? TextDecoration.underline
+                            : TextDecoration.none, // Add underline
+                        color: selectedTransactionType == 'Payment'
+                            ? Color.fromARGB(255, 33, 236, 243)
+                            : Colors.blue, // Change color when selected
+                        fontSize:
+                            selectedTransactionType == 'Payment' ? 22.0 : 18.0,
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
       ),
       SizedBox(height: 16.0),
       if (selectedTransactionType == 'Increase' ||
-          selectedTransactionType == 'Decrease')
+          selectedTransactionType == 'Decrease' ||
+          selectedTransactionType == 'Income' ||
+          selectedTransactionType == 'Outcome')
         Container(
           child: Padding(
             padding: EdgeInsets.only(left: 10, top: 120, right: 10, bottom: 10),
@@ -1059,7 +1139,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                     SizedBox(height: 16), // Spacer
 
                     DropdownButton<String>(
-                      value: dropDownValueUnit,
+                      value: dropDownValuePeriod,
                       icon: const Icon(Icons.arrow_downward),
                       elevation: 16,
                       style: const TextStyle(color: Colors.deepPurple),
@@ -1070,9 +1150,9 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                       onChanged: (String? value) {
                         // This is called when the user selects an item.
                         setState(() {
-                          dropDownValueUnit = value!;
+                          dropDownValuePeriod = value!;
                           period = value;
-                          print(value + dropDownValueUnit + period);
+                          print(value + dropDownValuePeriod + period);
                         });
                       },
                       items: periodList
@@ -1084,7 +1164,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                       }).toList(),
                     ),
                     SizedBox(height: 25.0),
-                    if (dropDownValueUnit != 'For once')
+                    if (dropDownValuePeriod != 'For once')
                       Container(
                         child: Row(
                           children: [
@@ -1122,8 +1202,6 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                     SizedBox(height: 25.0),
                     ElevatedButton(
                       onPressed: () {
-                        String selectedSourceAccountID =
-                            sourceAccountController.text;
                         DateTime targetDate = DateTime(
                           _selectedDate.year,
                           _selectedDate.month,
@@ -1137,7 +1215,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                               selectedTransactionType,
                               totalPrice,
                               transactionDetail,
-                              selectedSourceAccountID,
+                              "",
                               targetDate,
                               selectedDuration,
                               period);
@@ -1175,14 +1253,16 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                         ),
                       ),
                     ),
-                    FutureBuilder<List<String>>(
-                      future: getInternalAccountNames(),
+                    StreamBuilder<List<String>>(
+                      stream: getInternalAccountNames(),
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
                           return TextFieldSearch(
                               initialList: snapshot.data,
-                              label: 'Internal account(source)',
+                              label: 'Internal account (source)',
                               controller: sourceAccountController);
+                        } else if (snapshot.hasError) {
+                          return Text('Error: ${snapshot.error}');
                         } else {
                           return Center(child: CircularProgressIndicator());
                         }
@@ -1309,7 +1389,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                     SizedBox(height: 20), // Spacer
 
                     DropdownButton<String>(
-                      value: dropDownValueUnit,
+                      value: dropDownValuePeriod,
                       icon: const Icon(Icons.arrow_downward),
                       elevation: 16,
                       style: const TextStyle(color: Colors.deepPurple),
@@ -1320,9 +1400,9 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                       onChanged: (String? value) {
                         // This is called when the user selects an item.
                         setState(() {
-                          dropDownValueUnit = value!;
+                          dropDownValuePeriod = value!;
                           period = value;
-                          print(value + dropDownValueUnit + period);
+                          print(value + dropDownValuePeriod + period);
                         });
                       },
                       items: periodList
@@ -1334,7 +1414,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                       }).toList(),
                     ),
                     SizedBox(height: 25.0),
-                    if (dropDownValueUnit != 'For once')
+                    if (dropDownValuePeriod != 'For once')
                       Container(
                         child: Row(
                           children: [
@@ -1379,14 +1459,12 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                           _selectedTime.hour,
                           _selectedTime.minute,
                         );
-                        String selectedSourceAccount =
-                            sourceAccountController.text;
 
                         setState(() {
                           sourceAccountValidator = "";
                         });
-                        if (selectedSourceAccount == null ||
-                            selectedSourceAccount == "") {
+                        if (sourceAccountController.text == null ||
+                            sourceAccountController.text == "") {
                           setState(() {
                             sourceAccountValidator =
                                 'Please enter a valid internal (source) account.';
@@ -1398,7 +1476,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                                 selectedTransactionType,
                                 totalPrice,
                                 transactionDetail,
-                                selectedSourceAccount,
+                                sourceAccountController.text,
                                 targetDate,
                                 selectedDuration,
                                 period);

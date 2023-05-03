@@ -125,7 +125,8 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Expanded(
-                                          child: Text(data['transactionType']),
+                                          child: Text(data['transactionType'],
+                                              style: TextStyle(fontSize: 14)),
                                           flex: 2),
                                       Expanded(
                                           flex: 6,
@@ -241,7 +242,7 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                                     Expanded(
                                         child: Text(
                                           '${data['transactionType']}',
-                                          style: TextStyle(fontSize: 16),
+                                          style: TextStyle(fontSize: 14),
                                         ),
                                         flex: 2),
                                     Expanded(
@@ -455,8 +456,6 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
   String dropDownValueUnit = 'For once';
   String selectedTransactionType = 'Add';
 
-  TextEditingController sourceAccountController = TextEditingController();
-  TextEditingController externalAccountController = TextEditingController();
   String totalPriceOutput = "Total price";
   String sourceAccountValidator = "";
   String externalAccountValidator = "";
@@ -484,13 +483,6 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
   void initState() {
     super.initState();
     // Start listening to changes.
-  }
-
-  @override
-  void dispose() {
-    sourceAccountController.dispose();
-    externalAccountController.dispose(); // Dispose the controller properly
-    super.dispose();
   }
 
   Future<List<String>>? getInternalAccountNames() async {
@@ -553,6 +545,9 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
       'Every month',
       'Every year'
     ];
+
+    TextEditingController sourceAccountController = TextEditingController();
+    TextEditingController externalAccountController = TextEditingController();
 
     return Stack(children: [
       Row(

@@ -29,23 +29,19 @@ class _MainPage extends State<MainPage> {
   @override
   void initState() {
     super.initState();
-    prefs.getString("userID").then((value) {
-      setState(() {
-        currentUserID = value;
-      });
-    });
-    prefs.getString("ledgerID").then((value) {
-      setState(() {
-        currentLedgerID = value;
-      });
-    });
+    getUserID();
+    getLedgerID();
   }
 
   @override
   Widget build(BuildContext context) {
-    checkForFutureTransactions(currentLedgerID!);
+    try {
+      checkForFutureTransactions(currentLedgerID!);
+    } catch (e) {
+      print(e);
+    }
+
     ExchangerateRequester requester = new ExchangerateRequester();
-    Future<double> rate = requester.getRate('EUR', 'TRY', 1000);
     return Scaffold(
       appBar: AppBar(
         title: Text('Main Page'),
@@ -183,6 +179,27 @@ class _MainPage extends State<MainPage> {
                             final double revenue = revenueSnapshot.data ?? 0;
                             final double expense = expenseSnapshot.data ?? 0;
                             final double balance = revenue - expense;
+
+                            if (balance > 0)
+                              return Center(
+                                child: Text(
+                                  balance.toString(),
+                                  style: TextStyle(
+                                    fontSize: 24.0,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                              );
+                            if (balance < 0)
+                              return Center(
+                                child: Text(
+                                  balance.toString(),
+                                  style: TextStyle(
+                                    fontSize: 24.0,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                              );
                             return Center(
                               child: Text(
                                 balance.toString(),
@@ -283,7 +300,8 @@ class _MainPage extends State<MainPage> {
     Query userAccountTransactions = transactions
         .where('ledgerID', isEqualTo: ledgerID)
         .where('isActive', isEqualTo: true)
-        .where('transactionType', whereIn: ['Sell', 'Collection', 'Decrease']);
+        .where('transactionType',
+            whereIn: ['Sell', 'Collection', 'Decrease', 'Income']);
 
     double totalRevenue = 0;
 
@@ -306,7 +324,8 @@ class _MainPage extends State<MainPage> {
     Query userAccountTransactions = transactions
         .where('ledgerID', isEqualTo: ledgerID)
         .where('isActive', isEqualTo: true)
-        .where('transactionType', whereIn: ['Buy', 'Payment', 'Increase']);
+        .where('transactionType',
+            whereIn: ['Buy', 'Payment', 'Increase', 'Outcome']);
 
     double totalExpense = 0;
 
@@ -327,30 +346,32 @@ class _MainPage extends State<MainPage> {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     CollectionReference transactions = firestore.collection('transactions');
     List<PieData> pieData = [];
-    List<String> categoryList = [];
+    Map<String, double> categoryList = {};
 
-    Query userAccounts = transactions
+    Query userTransactions = transactions
         .where('ledgerID', isEqualTo: ledgerID)
         .where('isActive', isEqualTo: true);
 
     try {
-      QuerySnapshot snapshot = await userAccounts.get();
+      QuerySnapshot snapshot = await userTransactions.get();
       snapshot.docs.forEach((DocumentSnapshot doc) {
-        if (doc['transactionType'] == 'Buy' ||
-            doc['transactionType'] == 'Payment') {
-          categoryList.add(doc['categoryName']);
+        if ((doc['transactionType'] == 'Buy' ||
+                doc['transactionType'] == 'Payment' ||
+                doc['transactionType'] == 'Outcome' ||
+                doc['transactionType'] == 'Increase') &&
+            doc['categoryName'] != '') {
+          String categoryName = doc['categoryName'];
+          double totalPrice = doc['totalPrice'];
+          categoryList[categoryName] =
+              (categoryList[categoryName] ?? 0) + totalPrice;
         }
       });
-      categoryList.forEach((selectedCategory) {
-        int counter = 0;
-        categoryList.forEach((category) {
-          if (selectedCategory == category) {
-            counter++;
-          }
-        });
-        PieData newData = PieData(selectedCategory, counter, selectedCategory);
+
+      categoryList.forEach((categoryName, totalPrice) {
+        PieData newData = PieData(categoryName, totalPrice, categoryName);
         pieData.add(newData);
       });
+
       return pieData;
     } catch (error) {
       print('Error getting transactions: $error');
@@ -501,6 +522,22 @@ class _MainPage extends State<MainPage> {
       print('Error caught: $e');
     }
   }
+
+  Future<void> getUserID() async {
+    await prefs.getString("userID").then((value) {
+      setState(() {
+        currentUserID = value;
+      });
+    });
+  }
+
+  Future<void> getLedgerID() async {
+    prefs.getString("ledgerID").then((value) {
+      setState(() {
+        currentLedgerID = value;
+      });
+    });
+  }
 }
 
 Widget LatestExchangeRates() {
@@ -508,7 +545,7 @@ Widget LatestExchangeRates() {
   return Container(
       width: 500,
       height: 500,
-      child: FutureBuilder<Map<String, double>>(
+      child: FutureBuilder<Map<String, dynamic>>(
         future: requester.requestAll('TRY'),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
