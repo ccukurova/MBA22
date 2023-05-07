@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Helpers/SharedPreferencesManager.dart';
 import 'package:MBA22/Models/LedgerModel.dart';
@@ -126,6 +127,19 @@ class _LedgerPage extends State<LedgerPage> {
                                                         ListTile(
                                                           leading:
                                                               Icon(Icons.edit),
+                                                          title: Text('Share'),
+                                                          onTap: () {
+                                                            // do something
+                                                            Navigator.pop(
+                                                                context);
+                                                            showShareLedger(
+                                                                context,
+                                                                document);
+                                                          },
+                                                        ),
+                                                        ListTile(
+                                                          leading:
+                                                              Icon(Icons.edit),
                                                           title: Text('Update'),
                                                           onTap: () {
                                                             // do something
@@ -200,6 +214,18 @@ class _LedgerPage extends State<LedgerPage> {
     await Navigator.push(
         context, MaterialPageRoute(builder: (context) => MainPage()));
   }
+
+  void showShareLedger(
+      BuildContext context, DocumentSnapshot<Object?> document) async {
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          content: shareLedger(document),
+        );
+      },
+    );
+  }
 }
 
 class LedgerAdder extends StatefulWidget {
@@ -211,10 +237,20 @@ class LedgerAdder extends StatefulWidget {
 class _LedgerAdder extends State<LedgerAdder> {
   CollectionReference ledgers =
       FirebaseFirestore.instance.collection('ledgers');
-  final _formKey = GlobalKey<FormState>();
+  final _formKeyCreateLedger = GlobalKey<FormState>();
+  final _formKeySubscribeLedger = GlobalKey<FormState>();
   String ledgerName = '';
   String ledgerDetail = '';
   final SharedPreferencesManager prefs = SharedPreferencesManager();
+  String? currentUserID;
+
+  String ledgerToSubscribe = '';
+
+  @override
+  void initState() {
+    super.initState();
+    getUserID();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -237,55 +273,152 @@ class _LedgerAdder extends State<LedgerAdder> {
         ),
         Padding(
           padding: EdgeInsets.only(left: 20, top: 80, right: 20, bottom: 40),
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextFormField(
-                    decoration: InputDecoration(
-                      labelText: 'Ledger Name',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Please enter a ledger name.';
-                      }
-                      return null;
-                    },
-                    onSaved: (value) {
-                      ledgerName = value!;
-                    },
-                  ),
-                  SizedBox(height: 16.0),
-                  TextFormField(
-                    decoration: InputDecoration(
-                      labelText: 'Ledger Detail (Optional)',
-                      border: OutlineInputBorder(),
-                    ),
-                    onSaved: (value) {
-                      ledgerDetail = value!;
-                    },
-                  ),
-                  SizedBox(height: 16.0),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        _formKey.currentState!.save();
-                        createLedger(ledgerName, ledgerDetail);
-                        Navigator.of(context).pop();
-                      }
-                    },
-                    child: Text('Add'),
-                  ),
-                ],
-              ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Form(
+                    key: _formKeyCreateLedger,
+                    child: Column(children: [
+                      TextFormField(
+                        decoration: InputDecoration(
+                          labelText: 'Ledger Name',
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value!.isEmpty) {
+                            return 'Please enter a ledger name.';
+                          }
+                          return null;
+                        },
+                        onSaved: (value) {
+                          ledgerName = value!;
+                        },
+                      ),
+                      SizedBox(height: 16.0),
+                      TextFormField(
+                        decoration: InputDecoration(
+                          labelText: 'Ledger Detail (Optional)',
+                          border: OutlineInputBorder(),
+                        ),
+                        onSaved: (value) {
+                          ledgerDetail = value!;
+                        },
+                      ),
+                      SizedBox(height: 16.0),
+                      ElevatedButton(
+                        onPressed: () {
+                          if (_formKeyCreateLedger.currentState!.validate()) {
+                            _formKeyCreateLedger.currentState!.save();
+                            createLedger(ledgerName, ledgerDetail);
+                            Navigator.of(context).pop();
+                          }
+                        },
+                        child: Text('Add'),
+                      ),
+                    ])),
+                SizedBox(height: 16.0),
+                Form(
+                    key: _formKeySubscribeLedger,
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Divider(
+                                thickness: 2.0,
+                                color: Colors.black,
+                              ),
+                            ),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: Text(
+                                "Or subscribe ",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12.0,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Divider(
+                                thickness: 2.0,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 16.0),
+                        TextFormField(
+                          decoration: InputDecoration(
+                            labelText: 'Ledger ID',
+                            border: OutlineInputBorder(),
+                          ),
+                          onSaved: (value) {
+                            ledgerToSubscribe = value!;
+                          },
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return 'Please enter a ledger ID.';
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: 16.0),
+                        ElevatedButton(
+                          onPressed: () {
+                            if (_formKeySubscribeLedger.currentState!
+                                .validate()) {
+                              _formKeySubscribeLedger.currentState!.save();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  duration: Duration(seconds: 3),
+                                  content: FutureBuilder<String>(
+                                    future:
+                                        subscribeToLedger(ledgerToSubscribe),
+                                    builder: (BuildContext context,
+                                        AsyncSnapshot<String> snapshot) {
+                                      if (snapshot.connectionState ==
+                                          ConnectionState.done) {
+                                        // Future has completed
+                                        if (snapshot.hasData) {
+                                          // Display the result of the future in the snackbar
+                                          return Text(snapshot.data!);
+                                        } else {
+                                          // Future completed with an error
+                                          return Text(
+                                              "Error: ${snapshot.error}");
+                                        }
+                                      } else {
+                                        // Future not yet complete
+                                        return Text("Subscribing to ledger...");
+                                      }
+                                    },
+                                  ),
+                                ),
+                              );
+                              Navigator.of(context).pop();
+                            }
+                          },
+                          child: Text('Subscribe'),
+                        ),
+                      ],
+                    ))
+              ],
             ),
           ),
         )
       ],
     );
+  }
+
+  Future<void> getUserID() async {
+    await prefs.getString("userID").then((value) {
+      setState(() {
+        currentUserID = value;
+      });
+    });
   }
 
   Future<void> createLedger(String _ledgerName, String _ledgerDetail) async {
@@ -309,6 +442,24 @@ class _LedgerAdder extends State<LedgerAdder> {
       'createDate': Timestamp.fromDate(newLedger.createDate),
       'updateDate': Timestamp.fromDate(newLedger.updateDate),
       'isActive': newLedger.isActive
+    });
+  }
+
+  Future<String> subscribeToLedger(String ledgerToSubscribe) async {
+    DocumentReference subscribedLedgerDoc = ledgers.doc(ledgerToSubscribe);
+    return subscribedLedgerDoc.get().then((doc) {
+      if (doc.exists) {
+        // Add the ledger ID to the users array in the Firestore document
+        doc.reference.update({
+          "users": FieldValue.arrayUnion([currentUserID])
+        });
+        return 'Subscribed to the ledger';
+      } else {
+        return 'Ledger not found';
+      }
+    }).catchError((error) {
+      // Handle any errors that occur during the future execution
+      return 'Error subscribing to ledger: $error';
     });
   }
 }
@@ -421,6 +572,92 @@ class ledgerUpdaterState extends State<ledgerUpdater> {
       }
     }).catchError((error) {
       print('Error getting document: $error');
+    });
+  }
+}
+
+class shareLedger extends StatefulWidget {
+  final DocumentSnapshot<Object?> document;
+
+  shareLedger(this.document);
+
+  @override
+  shareLedgerState createState() => shareLedgerState();
+}
+
+class shareLedgerState extends State<shareLedger> {
+  String? currentUserID;
+  final SharedPreferencesManager prefs = SharedPreferencesManager();
+
+  @override
+  void initState() {
+    super.initState();
+    getUserID();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Share Ledger',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            IconButton(
+              icon: Icon(Icons.close),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            )
+          ],
+        ),
+        Padding(
+          padding: EdgeInsets.only(left: 20, top: 80, right: 20, bottom: 40),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('You can send this ID to share your ledger with others:'),
+                SizedBox(height: 16.0),
+                Container(
+                  padding: EdgeInsets.all(8.0),
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10.0),
+                      border: Border.all(color: Colors.blue, width: 2.0)),
+                  child: SelectableText(
+                    widget.document.id,
+                    style: TextStyle(
+                      color: Colors.blue,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16.0),
+                ElevatedButton(
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: widget.document.id));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('Copied to clipboard!'),
+                    ));
+                  },
+                  child: Text('Copy'),
+                ),
+              ],
+            ),
+          ),
+        )
+      ],
+    );
+  }
+
+  Future<void> getUserID() async {
+    await prefs.getString("userID").then((value) {
+      setState(() {
+        currentUserID = value;
+      });
     });
   }
 }

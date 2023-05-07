@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:MBA22/Pages/LeftDrawer.dart';
 import '../Helpers/SharedPreferencesManager.dart';
 import '../Models/TransactionModel.dart';
+import 'AccountTransactionPage.dart';
 import 'Charts/BarChart.dart';
 import 'LeftDrawer.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
@@ -12,6 +13,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'Charts/PieChart.dart';
 import 'package:MBA22/Services/RatesRequester.dart';
 import '../constants.dart';
+import 'package:intl/intl.dart';
 
 class MainPage extends StatefulWidget {
   @override
@@ -289,6 +291,14 @@ class _MainPage extends State<MainPage> {
               ),
             ),
           ),
+          SizedBox(height: 30),
+          Text(
+            'Upcoming transactions',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 30),
+          showFutureTransactions(),
         ]),
       ),
     );
@@ -434,11 +444,17 @@ class _MainPage extends State<MainPage> {
     QuerySnapshot snapshot = await userFutureTransactions.get();
     snapshot.docs.forEach((DocumentSnapshot doc) {
       DateTime targetDate = (doc['targetDate'] as Timestamp).toDate();
-      if (targetDate != DateTime(0)) {
+      if (targetDate !=
+          Timestamp.fromDate(
+              DateTime.fromMillisecondsSinceEpoch(0, isUtc: true))) {
         int dateTimeCompare = targetDate.compareTo(DateTime.now());
 
         if (dateTimeCompare <= 0) {
-          doc.reference.update({'isDone': true, 'targetDate': DateTime(0)});
+          doc.reference.update({
+            'isDone': true,
+            'targetDate': Timestamp.fromDate(
+                DateTime.fromMillisecondsSinceEpoch(0, isUtc: true))
+          });
 
           if (doc['duration'] > 0) CreateFutureTransaction(doc);
         }
@@ -459,7 +475,8 @@ class _MainPage extends State<MainPage> {
     CollectionReference transactions = firestore.collection('transactions');
     bool isDone = false;
     DateTime targetDate = (doc['targetDate'] as Timestamp).toDate();
-    DateTime nextTargetDate = DateTime(0);
+    DateTime nextTargetDate =
+        DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
     //   Period can be:
     //   'For once',
     //   'Every day'
@@ -537,6 +554,555 @@ class _MainPage extends State<MainPage> {
         currentLedgerID = value;
       });
     });
+  }
+
+  Widget showFutureTransactions() {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    CollectionReference transactions = firestore.collection('transactions');
+
+    if (currentLedgerID == null) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    Timestamp zeroDate =
+        Timestamp.fromDate(DateTime.fromMillisecondsSinceEpoch(0, isUtc: true));
+    Query ledgerTransactions = transactions
+        .where('ledgerID', isEqualTo: currentLedgerID)
+        .where('isActive', isEqualTo: true)
+        .where('targetDate', isNotEqualTo: zeroDate)
+        .orderBy('targetDate', descending: true);
+    return Container(
+        width: 700,
+        height: 500,
+        child: SingleChildScrollView(
+            child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            StreamBuilder<QuerySnapshot>(
+              stream: ledgerTransactions.snapshots(),
+              builder: (BuildContext context,
+                  AsyncSnapshot<QuerySnapshot> snapshot) {
+                if (snapshot.hasError) {
+                  return Text('Error: ${snapshot.error}');
+                }
+
+                if (snapshot.hasData && snapshot.data != null) {
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: snapshot.data!.docs.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      DocumentSnapshot document = snapshot.data!.docs[index];
+                      Map<String, dynamic> data =
+                          document.data() as Map<String, dynamic>;
+                      bool showIcons = false;
+                      String documentId = document.id;
+                      if (data['transactionType'] == 'Increase' ||
+                          data['transactionType'] == 'Decrease' ||
+                          data['transactionType'] == 'Income' ||
+                          data['transactionType'] == 'Outcome') {
+                        return InkWell(
+                          onTap: () {
+                            // Go to transaction details
+                          },
+                          child: ListTile(
+                            title: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Expanded(
+                                    child: Text(data['transactionType'],
+                                        style: TextStyle(fontSize: 14)),
+                                    flex: 2),
+                                Expanded(
+                                    flex: 6,
+                                    child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          if (data['transactionType'] ==
+                                              'Increase')
+                                            Text(
+                                              '+${data['totalPrice'].toString()}',
+                                              style: TextStyle(
+                                                  color: Colors.green,
+                                                  fontSize: 20),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          if (data['transactionType'] ==
+                                              'Decrease')
+                                            Text(
+                                              '-${data['totalPrice'].toString()}',
+                                              style: TextStyle(
+                                                  color: Colors.red,
+                                                  fontSize: 20),
+                                            ),
+                                          if (data['transactionType'] ==
+                                              'Income')
+                                            Text(
+                                              '+${data['totalPrice'].toString()}',
+                                              style: TextStyle(
+                                                  color: Colors.green,
+                                                  fontSize: 20),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          if (data['transactionType'] ==
+                                              'Outcome')
+                                            Text(
+                                              '-${data['totalPrice'].toString()}',
+                                              style: TextStyle(
+                                                  color: Colors.red,
+                                                  fontSize: 20),
+                                            ),
+                                          if (data['totalAmount'] == 0)
+                                            Text(
+                                              data['totalAmount'].toString(),
+                                              style: TextStyle(fontSize: 16),
+                                            ),
+                                        ])),
+                                Expanded(
+                                    child: IconButton(
+                                      icon: Icon(Icons.more_vert),
+                                      onPressed: () {
+                                        setState(() {
+                                          showModalBottomSheet(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return Container(
+                                                child: Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: <Widget>[
+                                                    ListTile(
+                                                      leading: Icon(Icons.edit),
+                                                      title: Text('Update'),
+                                                      onTap: () {
+                                                        // do something
+                                                        Navigator.pop(context);
+                                                        // showAccountTransactionUpdaterDialog(
+                                                        //     context,
+                                                        //     document);
+                                                      },
+                                                    ),
+                                                    ListTile(
+                                                      leading:
+                                                          Icon(Icons.delete),
+                                                      title: Text('Delete'),
+                                                      onTap: () async {
+                                                        // do something
+                                                        String documentId =
+                                                            document.id;
+                                                        await transactions
+                                                            .doc(documentId)
+                                                            .update({
+                                                          'isActive': false
+                                                        });
+                                                        await transactions
+                                                            .doc(documentId)
+                                                            .update({
+                                                          'updateDate':
+                                                              DateTime.now()
+                                                        });
+                                                        Navigator.pop(context);
+                                                      },
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            },
+                                          );
+                                        });
+                                      },
+                                    ),
+                                    flex: 2),
+                              ],
+                            ),
+                            subtitle: Column(
+                              children: [
+                                Text(
+                                    '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
+                                SizedBox(height: 10),
+                                if (data['targetDate'] !=
+                                    Timestamp.fromDate(
+                                        DateTime.fromMillisecondsSinceEpoch(0,
+                                            isUtc: true)))
+                                  Container(
+                                    width: 250,
+                                    padding: EdgeInsets.all(5),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(8.0),
+                                      color: Colors.blue,
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.access_time,
+                                          size: 16.0,
+                                          color: Colors.white,
+                                        ),
+                                        SizedBox(width: 4.0),
+                                        Text(
+                                          '${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())} / ${data['period']}',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                SizedBox(height: 10)
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                      if (data['transactionType'] == 'Collection' ||
+                          data['transactionType'] == 'Payment') {
+                        return InkWell(
+                          onTap: () {
+                            // Go to transaction details
+                          },
+                          child: ListTile(
+                            title: Row(children: [
+                              Expanded(
+                                  child: Text(
+                                    '${data['transactionType']}',
+                                    style: TextStyle(fontSize: 14),
+                                  ),
+                                  flex: 2),
+                              Expanded(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    if (data['transactionType'] == 'Collection')
+                                      Text(
+                                        '+${data['totalPrice'].toString()}',
+                                        style: TextStyle(
+                                          color: Colors.green,
+                                          fontSize: 20,
+                                        ),
+                                      ),
+                                    if (data['transactionType'] == 'Payment')
+                                      Text(
+                                        '-${data['totalPrice'].toString()} ',
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 20,
+                                        ),
+                                      ),
+                                    if (data['totalPrice'] == 0)
+                                      Text(
+                                        data['totalPrice'].toString(),
+                                        style: TextStyle(fontSize: 20),
+                                      ),
+                                  ],
+                                ),
+                                flex: 6,
+                              ),
+                              Expanded(
+                                  child: IconButton(
+                                    icon: Icon(Icons.more_vert),
+                                    onPressed: () {
+                                      setState(() {
+                                        showModalBottomSheet(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return Container(
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: <Widget>[
+                                                  ListTile(
+                                                    leading: Icon(Icons.edit),
+                                                    title: Text('Update'),
+                                                    onTap: () {
+                                                      // do something
+                                                      Navigator.pop(context);
+                                                      // showAccountTransactionUpdaterDialog(
+                                                      //     context,
+                                                      //     document);
+                                                    },
+                                                  ),
+                                                  ListTile(
+                                                    leading: Icon(Icons.delete),
+                                                    title: Text('Delete'),
+                                                    onTap: () async {
+                                                      // do something
+                                                      String documentId =
+                                                          document.id;
+                                                      await transactions
+                                                          .doc(documentId)
+                                                          .update({
+                                                        'isActive': false
+                                                      });
+                                                      await transactions
+                                                          .doc(documentId)
+                                                          .update({
+                                                        'updateDate':
+                                                            DateTime.now()
+                                                      });
+                                                      Navigator.pop(context);
+                                                    },
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                        );
+                                      });
+                                    },
+                                  ),
+                                  flex: 2),
+                            ]),
+                            subtitle: Column(children: [
+                              FutureBuilder<List<String>>(
+                                future: Future.wait([
+                                  getAccountNameByID(data['accountID'][0]),
+                                  getAccountNameByID(data['accountID'][1]),
+                                ]),
+                                builder: (BuildContext context,
+                                    AsyncSnapshot<List<String>> snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.done) {
+                                    if (snapshot.hasData) {
+                                      final sourceAccountName =
+                                          snapshot.data![1];
+                                      final accountName = snapshot.data![0];
+                                      String arrow = "-";
+
+                                      if (data['transactionType'] == 'Buy' ||
+                                          data['transactionType'] == 'Payment')
+                                        arrow = '\u2192';
+
+                                      if (data['transactionType'] == 'Sell' ||
+                                          data['transactionType'] ==
+                                              'Collection') arrow = '\u2190';
+
+                                      return Text(
+                                          '$sourceAccountName $arrow $accountName');
+                                    } else {
+                                      return Text('Error: ${snapshot.error}');
+                                    }
+                                  } else {
+                                    return CircularProgressIndicator();
+                                  }
+                                },
+                              ),
+                              Text(
+                                  '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
+                              SizedBox(height: 10),
+                              if (data['targetDate'] !=
+                                  Timestamp.fromDate(
+                                      DateTime.fromMillisecondsSinceEpoch(0,
+                                          isUtc: true)))
+                                Container(
+                                  width: 250,
+                                  padding: EdgeInsets.all(5),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8.0),
+                                    color: Colors.blue,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.access_time,
+                                        size: 16.0,
+                                        color: Colors.white,
+                                      ),
+                                      SizedBox(width: 4.0),
+                                      Text(
+                                        '${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())} / ${data['period']}',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              SizedBox(height: 10)
+                            ]),
+                          ),
+                        );
+                      }
+                      if (data['transactionType'] == 'Buy' ||
+                          data['transactionType'] == 'Sell') {
+                        return InkWell(
+                          onTap: () {
+                            // Go to transaction details
+                          },
+                          child: ListTile(
+                            title: Row(children: [
+                              Expanded(
+                                  child: Text(
+                                    '${data['transactionType']}',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                  flex: 2),
+                              Expanded(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    if (data['transactionType'] == 'Buy')
+                                      Text(
+                                        '-${data['totalPrice'].toString()}',
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 20,
+                                        ),
+                                      ),
+                                    if (data['transactionType'] == 'Sell')
+                                      Text(
+                                        '+${data['totalPrice'].toString()} ',
+                                        style: TextStyle(
+                                          color: Colors.green,
+                                          fontSize: 20,
+                                        ),
+                                      ),
+                                    if (data['totalPrice'] == 0)
+                                      Text(
+                                        data['totalPrice'].toString(),
+                                        style: TextStyle(fontSize: 20),
+                                      ),
+                                  ],
+                                ),
+                                flex: 6,
+                              ),
+                              Expanded(
+                                  child: IconButton(
+                                    icon: Icon(Icons.more_vert),
+                                    onPressed: () {
+                                      setState(() {
+                                        showModalBottomSheet(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return Container(
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: <Widget>[
+                                                  ListTile(
+                                                    leading: Icon(Icons.edit),
+                                                    title: Text('Update'),
+                                                    onTap: () {
+                                                      // do something
+                                                      Navigator.pop(context);
+                                                      // showStockTransactionUpdaterDialog(
+                                                      //     context,
+                                                      //     document);
+                                                    },
+                                                  ),
+                                                  ListTile(
+                                                    leading: Icon(Icons.delete),
+                                                    title: Text('Delete'),
+                                                    onTap: () async {
+                                                      // do something
+                                                      String documentId =
+                                                          document.id;
+                                                      await transactions
+                                                          .doc(documentId)
+                                                          .update({
+                                                        'isActive': false
+                                                      });
+                                                      await transactions
+                                                          .doc(documentId)
+                                                          .update({
+                                                        'updateDate':
+                                                            DateTime.now()
+                                                      });
+                                                      Navigator.pop(context);
+                                                    },
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                        );
+                                      });
+                                    },
+                                  ),
+                                  flex: 2),
+                            ]),
+                            subtitle: Column(children: [
+                              Text(
+                                '${data['amount']}x${data['price'].toString()}=${data['totalPrice']}',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                              FutureBuilder<List<String>>(
+                                future: Future.wait([
+                                  getAccountNameByID(data['accountID'][1]),
+                                  getAccountNameByID(data['accountID'][0]),
+                                ]),
+                                builder: (BuildContext context,
+                                    AsyncSnapshot<List<String>> snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.done) {
+                                    if (snapshot.hasData) {
+                                      final sourceAccountName =
+                                          snapshot.data![0];
+                                      final accountName = snapshot.data![1];
+                                      String arrow = "-";
+
+                                      if (data['transactionType'] == 'Buy' ||
+                                          data['transactionType'] == 'Payment')
+                                        arrow = '\u2192';
+
+                                      if (data['transactionType'] == 'Sell' ||
+                                          data['transactionType'] ==
+                                              'Collection') arrow = '\u2190';
+
+                                      return Text(
+                                          '$sourceAccountName $arrow $accountName');
+                                    } else {
+                                      return Text('Error: ${snapshot.error}');
+                                    }
+                                  } else {
+                                    return CircularProgressIndicator();
+                                  }
+                                },
+                              ),
+                              Text(
+                                  '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
+                              SizedBox(height: 10),
+                              if (data['targetDate'] !=
+                                  Timestamp.fromDate(
+                                      DateTime.fromMillisecondsSinceEpoch(0,
+                                          isUtc: true)))
+                                Container(
+                                  width: 250,
+                                  padding: EdgeInsets.all(5),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8.0),
+                                    color: Colors.blue,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.access_time,
+                                        size: 16.0,
+                                        color: Colors.white,
+                                      ),
+                                      SizedBox(width: 4.0),
+                                      Text(
+                                        '${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())} / ${data['period']}',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              SizedBox(height: 10)
+                            ]),
+                          ),
+                        );
+                      }
+                    },
+                  );
+                } else {
+                  return Text('No data available');
+                }
+              },
+            ),
+          ],
+        )));
   }
 }
 

@@ -251,10 +251,37 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                   ),
                                   subtitle: Column(
                                     children: [
-                                      Text(DateFormat('dd-MM-yyyy – kk:mm')
-                                          .format(data['createDate']
-                                              .toDate()
-                                              .toLocal())),
+                                      Text(
+                                          '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
+                                      SizedBox(height: 10),
+                                      if (data['period'] != 'Now')
+                                        Container(
+                                          width: 250,
+                                          padding: EdgeInsets.all(5),
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(8.0),
+                                            color: Colors.blue,
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons.access_time,
+                                                size: 16.0,
+                                                color: Colors.white,
+                                              ),
+                                              SizedBox(width: 4.0),
+                                              Text(
+                                                '${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())} / ${data['period']}',
+                                                style: TextStyle(
+                                                    color: Colors.white),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      SizedBox(height: 10)
                                     ],
                                   ),
                                 ),
@@ -456,10 +483,37 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                         }
                                       },
                                     ),
-                                    Text(DateFormat('dd-MM-yyyy – kk:mm')
-                                        .format(data['createDate']
-                                            .toDate()
-                                            .toLocal())),
+                                    Text(
+                                        '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
+                                    SizedBox(height: 10),
+                                    if (data['period'] != 'Now')
+                                      Container(
+                                        width: 250,
+                                        padding: EdgeInsets.all(5),
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(8.0),
+                                          color: Colors.blue,
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.access_time,
+                                              size: 16.0,
+                                              color: Colors.white,
+                                            ),
+                                            SizedBox(width: 4.0),
+                                            Text(
+                                              '${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())} / ${data['period']}',
+                                              style: TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    SizedBox(height: 10)
                                   ]),
                                 ),
                               );
@@ -663,10 +717,37 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                         }
                                       },
                                     ),
-                                    Text(DateFormat('dd-MM-yyyy – kk:mm')
-                                        .format(data['createDate']
-                                            .toDate()
-                                            .toLocal())),
+                                    Text(
+                                        '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
+                                    SizedBox(height: 10),
+                                    if (data['period'] != 'Now')
+                                      Container(
+                                        width: 250,
+                                        padding: EdgeInsets.all(5),
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(8.0),
+                                          color: Colors.blue,
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.access_time,
+                                              size: 16.0,
+                                              color: Colors.white,
+                                            ),
+                                            SizedBox(width: 4.0),
+                                            Text(
+                                              '${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())} / ${data['period']}',
+                                              style: TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    SizedBox(height: 10)
                                   ]),
                                 ),
                               );
@@ -727,12 +808,12 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
       FirebaseFirestore.instance.collection('transactions');
   final _formKey = GlobalKey<FormState>();
 
-  String period = '';
+  String period = 'Now';
   String transactionDetail = '';
   double totalPrice = 0.0;
   final SharedPreferencesManager prefs = SharedPreferencesManager();
 
-  String dropDownValuePeriod = 'For once';
+  String dropDownValuePeriod = 'Now';
   String selectedTransactionType = 'Increase';
 
   String? currentLedgerID;
@@ -818,6 +899,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
     // Time formatter for displaying the selected time
     final timeFormatter = DateFormat('HH:mm');
     const List<String> periodList = <String>[
+      'Now',
       'For once',
       'Every day',
       'Every week',
@@ -1164,7 +1246,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                       }).toList(),
                     ),
                     SizedBox(height: 25.0),
-                    if (dropDownValuePeriod != 'For once')
+                    if (period != 'Now')
                       Container(
                         child: Row(
                           children: [
@@ -1202,13 +1284,19 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                     SizedBox(height: 25.0),
                     ElevatedButton(
                       onPressed: () {
-                        DateTime targetDate = DateTime(
-                          _selectedDate.year,
-                          _selectedDate.month,
-                          _selectedDate.day,
-                          _selectedTime.hour,
-                          _selectedTime.minute,
-                        );
+                        DateTime targetDate;
+                        if (period != "Now") {
+                          targetDate = DateTime(
+                            _selectedDate.year,
+                            _selectedDate.month,
+                            _selectedDate.day,
+                            _selectedTime.hour,
+                            _selectedTime.minute,
+                          );
+                        } else {
+                          targetDate = DateTime.fromMillisecondsSinceEpoch(0,
+                              isUtc: true);
+                        }
                         if (_formKey.currentState!.validate()) {
                           _formKey.currentState!.save();
                           createAccountTransaction(
@@ -1414,7 +1502,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                       }).toList(),
                     ),
                     SizedBox(height: 25.0),
-                    if (dropDownValuePeriod != 'For once')
+                    if (period != 'Now')
                       Container(
                         child: Row(
                           children: [
@@ -1452,13 +1540,19 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                     SizedBox(height: 25.0),
                     ElevatedButton(
                       onPressed: () {
-                        DateTime targetDate = DateTime(
-                          _selectedDate.year,
-                          _selectedDate.month,
-                          _selectedDate.day,
-                          _selectedTime.hour,
-                          _selectedTime.minute,
-                        );
+                        DateTime targetDate;
+                        if (period != 'Now') {
+                          targetDate = DateTime(
+                            _selectedDate.year,
+                            _selectedDate.month,
+                            _selectedDate.day,
+                            _selectedTime.hour,
+                            _selectedTime.minute,
+                          );
+                        } else {
+                          targetDate = DateTime.fromMillisecondsSinceEpoch(0,
+                              isUtc: true);
+                        }
 
                         setState(() {
                           sourceAccountValidator = "";

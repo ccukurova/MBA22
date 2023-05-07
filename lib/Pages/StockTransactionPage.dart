@@ -222,10 +222,37 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                                   ),
                                   subtitle: Column(
                                     children: [
-                                      Text(DateFormat('dd-MM-yyyy – kk:mm')
-                                          .format(data['createDate']
-                                              .toDate()
-                                              .toLocal())),
+                                      Text(
+                                          '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
+                                      SizedBox(height: 10),
+                                      if (data['period'] != 'Now')
+                                        Container(
+                                          width: 250,
+                                          padding: EdgeInsets.all(5),
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(8.0),
+                                            color: Colors.blue,
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons.access_time,
+                                                size: 16.0,
+                                                color: Colors.white,
+                                              ),
+                                              SizedBox(width: 4.0),
+                                              Text(
+                                                '${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())} / ${data['period']}',
+                                                style: TextStyle(
+                                                    color: Colors.white),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      SizedBox(height: 10)
                                     ],
                                   ),
                                 ),
@@ -379,10 +406,37 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                                         }
                                       },
                                     ),
-                                    Text(DateFormat('dd-MM-yyyy – kk:mm')
-                                        .format(data['createDate']
-                                            .toDate()
-                                            .toLocal())),
+                                    Text(
+                                        '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
+                                    SizedBox(height: 10),
+                                    if (data['period'] != 'Now')
+                                      Container(
+                                        width: 250,
+                                        padding: EdgeInsets.all(5),
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(8.0),
+                                          color: Colors.blue,
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.access_time,
+                                              size: 16.0,
+                                              color: Colors.white,
+                                            ),
+                                            SizedBox(width: 4.0),
+                                            Text(
+                                              '${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())} / ${data['period']}',
+                                              style: TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    SizedBox(height: 10)
                                   ]),
                                 ),
                               );
@@ -446,14 +500,14 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
   int selectedDuration = 1;
   TextEditingController duration = TextEditingController();
 
-  String period = 'For once';
+  String period = 'Now';
   String transactionDetail = '';
   double amount = 0.0;
   double totalPrice = 0.0;
   double price = 0.0;
   final SharedPreferencesManager prefs = SharedPreferencesManager();
 
-  String dropDownValueUnit = 'For once';
+  String dropDownValueUnit = 'Now';
   String selectedTransactionType = 'Add';
 
   String totalPriceOutput = "Total price";
@@ -540,6 +594,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
     // Time formatter for displaying the selected time
     final timeFormatter = DateFormat('HH:mm');
     const List<String> periodList = <String>[
+      'Now',
       'For once',
       'Every week',
       'Every month',
@@ -826,7 +881,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                       }).toList(),
                     ),
                     SizedBox(height: 25.0),
-                    if (dropDownValueUnit != 'For once')
+                    if (period != 'Now')
                       Container(
                         child: Row(
                           children: [
@@ -864,13 +919,19 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                     SizedBox(height: 25.0),
                     ElevatedButton(
                       onPressed: () {
-                        DateTime targetDate = DateTime(
-                          _selectedDate.year,
-                          _selectedDate.month,
-                          _selectedDate.day,
-                          _selectedTime.hour,
-                          _selectedTime.minute,
-                        );
+                        DateTime targetDate;
+                        if (period != "Now") {
+                          targetDate = DateTime(
+                            _selectedDate.year,
+                            _selectedDate.month,
+                            _selectedDate.day,
+                            _selectedTime.hour,
+                            _selectedTime.minute,
+                          );
+                        } else {
+                          targetDate = DateTime.fromMillisecondsSinceEpoch(0,
+                              isUtc: true);
+                        }
                         String selectedSourceAccountID =
                             sourceAccountController.text;
                         String selectedExternalAccountID =
@@ -1177,7 +1238,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                       }).toList(),
                     ),
                     SizedBox(height: 25.0),
-                    if (dropDownValueUnit != 'For once')
+                    if (period != 'Now')
                       Container(
                         child: Row(
                           children: [
@@ -1215,13 +1276,19 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                     SizedBox(height: 25.0),
                     ElevatedButton(
                       onPressed: () {
-                        DateTime targetDate = DateTime(
-                          _selectedDate.year,
-                          _selectedDate.month,
-                          _selectedDate.day,
-                          _selectedTime.hour,
-                          _selectedTime.minute,
-                        );
+                        DateTime targetDate;
+                        if (period != "Now") {
+                          targetDate = DateTime(
+                            _selectedDate.year,
+                            _selectedDate.month,
+                            _selectedDate.day,
+                            _selectedTime.hour,
+                            _selectedTime.minute,
+                          );
+                        } else {
+                          targetDate = DateTime.fromMillisecondsSinceEpoch(0,
+                              isUtc: true);
+                        }
                         String selectedSourceAccount =
                             sourceAccountController.text;
                         String selectedExternalAccount =

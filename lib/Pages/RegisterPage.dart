@@ -42,141 +42,147 @@ class _RegisterPageState extends State<RegisterPage> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding:
+              const EdgeInsets.only(left: 0, bottom: 100, right: 0, top: 100),
           child: Form(
             key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Name',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return 'Please enter your name';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) {
-                    name = value!;
-                  },
-                ),
-                SizedBox(height: 16.0),
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Surname',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return 'Please enter your surname';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) {
-                    surname = value!;
-                  },
-                ),
-                SizedBox(height: 16.0),
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return 'Please enter your email';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Please enter a valid email';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) {
-                    email = value!;
-                  },
-                ),
-                SizedBox(height: 16.0),
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Phone',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return 'Please enter your phone number';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) {
-                    phone = value!;
-                  },
-                ),
-                SizedBox(height: 16.0),
-                TextFormField(
-                  controller: passController,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    border: OutlineInputBorder(),
-                  ),
-                  obscureText: true,
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return 'Please enter a password';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) {
-                    password = value!;
-                  },
-                ),
-                SizedBox(height: 16.0),
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Confirm Password',
-                    border: OutlineInputBorder(),
-                  ),
-                  obscureText: true,
-                  validator: (value) {
-                    if (value!.isEmpty) {
-                      return 'Please confirm your password';
-                    }
-                    if (value != passController.value.text) {
-                      return 'Passwords do not match';
-                    }
-                    return null;
-                  },
-                  onSaved: (value) {
-                    passwordConfirmation = value!;
-                  },
-                ),
-                SizedBox(height: 16.0),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (_formKey.currentState!.validate()) {
-                      _formKey.currentState!.save();
-                      print('Name: $name');
-                      print('Surname: $surname');
-                      print('Email: $email');
-                      print('Phone: $phone');
-                      print('Password: $password');
-                      print('Password Confirmation: $passwordConfirmation');
-                      // TODO: Call the API to register the user
+            child: Center(
+                child: Container(
+                    width: 400,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        TextFormField(
+                          decoration: InputDecoration(
+                            labelText: 'Name',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return 'Please enter your name';
+                            }
+                            return null;
+                          },
+                          onSaved: (value) {
+                            name = value!;
+                          },
+                        ),
+                        SizedBox(height: 16.0),
+                        TextFormField(
+                          decoration: InputDecoration(
+                            labelText: 'Surname',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return 'Please enter your surname';
+                            }
+                            return null;
+                          },
+                          onSaved: (value) {
+                            surname = value!;
+                          },
+                        ),
+                        SizedBox(height: 16.0),
+                        TextFormField(
+                          decoration: InputDecoration(
+                            labelText: 'Email',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return 'Please enter your email';
+                            }
+                            if (!value.contains('@')) {
+                              return 'Please enter a valid email';
+                            }
+                            return null;
+                          },
+                          onSaved: (value) {
+                            email = value!;
+                          },
+                        ),
+                        SizedBox(height: 16.0),
+                        TextFormField(
+                          decoration: InputDecoration(
+                            labelText: 'Phone',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return 'Please enter your phone number';
+                            }
+                            return null;
+                          },
+                          onSaved: (value) {
+                            phone = value!;
+                          },
+                        ),
+                        SizedBox(height: 16.0),
+                        TextFormField(
+                          controller: passController,
+                          decoration: InputDecoration(
+                            labelText: 'Password',
+                            border: OutlineInputBorder(),
+                          ),
+                          obscureText: true,
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return 'Please enter a password';
+                            }
+                            return null;
+                          },
+                          onSaved: (value) {
+                            password = value!;
+                          },
+                        ),
+                        SizedBox(height: 16.0),
+                        TextFormField(
+                          decoration: InputDecoration(
+                            labelText: 'Confirm Password',
+                            border: OutlineInputBorder(),
+                          ),
+                          obscureText: true,
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return 'Please confirm your password';
+                            }
+                            if (value != passController.value.text) {
+                              return 'Passwords do not match';
+                            }
+                            return null;
+                          },
+                          onSaved: (value) {
+                            passwordConfirmation = value!;
+                          },
+                        ),
+                        SizedBox(height: 16.0),
+                        ElevatedButton(
+                          onPressed: () async {
+                            if (_formKey.currentState!.validate()) {
+                              _formKey.currentState!.save();
+                              print('Name: $name');
+                              print('Surname: $surname');
+                              print('Email: $email');
+                              print('Phone: $phone');
+                              print('Password: $password');
+                              print(
+                                  'Password Confirmation: $passwordConfirmation');
+                              // TODO: Call the API to register the user
 
-                      await createUser(name, surname, email, phone, password);
-                      await loginUser(email, password);
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => LedgerPage()));
-                    }
-                  },
-                  child: Text('Register'),
-                ),
-              ],
-            ),
+                              await createUser(
+                                  name, surname, email, phone, password);
+                              await loginUser(email, password);
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => LedgerPage()));
+                            }
+                          },
+                          child: Text('Register'),
+                        ),
+                      ],
+                    ))),
           ),
         ),
       ),
