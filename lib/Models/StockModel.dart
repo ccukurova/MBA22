@@ -2,7 +2,6 @@ class StockModel {
   String ledgerID;
   String stockName;
   String unit;
-  double balance;
   DateTime createDate;
   DateTime updateDate;
   bool isActive;
@@ -18,10 +17,6 @@ class StockModel {
   String get getUnit => this.unit;
 
   set setUnit(String unit) => this.unit = unit;
-
-  double get getBalance => this.balance;
-
-  set setBalance(double balance) => this.balance = balance;
 
   DateTime get getCreateDate => this.createDate;
 
@@ -39,7 +34,6 @@ class StockModel {
       {required this.ledgerID,
       required this.stockName,
       required this.unit,
-      required this.balance,
       required this.createDate,
       required this.updateDate,
       required this.isActive});

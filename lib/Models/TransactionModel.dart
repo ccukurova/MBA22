@@ -4,7 +4,9 @@ class TransactionModel {
   String stockID;
   String transactionType;
   double amount;
-  double totalPrice;
+  double total;
+  double convertedTotal;
+  List<String> currencies;
   double price;
   String transactionDetail;
   String categoryName;
@@ -22,7 +24,9 @@ class TransactionModel {
       required this.stockID,
       required this.transactionType,
       required this.amount,
-      required this.totalPrice,
+      required this.convertedTotal,
+      required this.total,
+      required this.currencies,
       required this.price,
       required this.transactionDetail,
       required this.categoryName,

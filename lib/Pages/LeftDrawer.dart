@@ -63,6 +63,7 @@ class _LeftDrawerState extends State<LeftDrawer> {
           ListTile(
             title: Text('Accounts'),
             onTap: () {
+              Navigator.pop(context);
               Navigator.push(context,
                   MaterialPageRoute(builder: (context) => AccountsPage()));
             },

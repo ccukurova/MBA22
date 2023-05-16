@@ -210,8 +210,8 @@ class _LedgerPage extends State<LedgerPage> {
   }
 
   Future<void> navigateToMain(DocumentSnapshot<Object?> document) async {
-    setLedgerID(document);
-    await Navigator.push(
+    await setLedgerID(document);
+    Navigator.push(
         context, MaterialPageRoute(builder: (context) => MainPage()));
   }
 

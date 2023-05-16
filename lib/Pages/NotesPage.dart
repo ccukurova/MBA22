@@ -295,7 +295,36 @@ class NotePageState extends State<NotePage> {
                                                   .toDate()
                                                   .toLocal())),
                                       ]),
-                                      SizedBox(height: 25)
+                                      SizedBox(height: 25),
+                                      SizedBox(height: 10),
+                                      if (data['period'] != 'Now')
+                                        Container(
+                                          width: 250,
+                                          padding: EdgeInsets.all(5),
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(8.0),
+                                            color: Colors.blue,
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons.access_time,
+                                                size: 16.0,
+                                                color: Colors.white,
+                                              ),
+                                              SizedBox(width: 4.0),
+                                              Text(
+                                                '${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())} / ${data['period']}',
+                                                style: TextStyle(
+                                                    color: Colors.white),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      SizedBox(height: 10)
                                     ])),
                               );
                           },

@@ -104,13 +104,14 @@ class StockPageState extends State<StockPage> {
                           itemBuilder: (BuildContext context, int index) {
                             DocumentSnapshot document =
                                 snapshot.data!.docs[index];
+                            String documentId = document.id;
                             Map<String, dynamic> data =
                                 document.data() as Map<String, dynamic>;
                             bool showIcons = false;
                             return InkWell(
                               onTap: () {
                                 setStockID(document);
-                                Navigator.push(
+                                Navigator.pushReplacement(
                                     context,
                                     MaterialPageRoute(
                                         builder: (context) =>
@@ -122,7 +123,7 @@ class StockPageState extends State<StockPage> {
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Text(data['balance'].toString()),
+                                    BalanceText(documentId),
                                     IconButton(
                                       icon: Icon(Icons.more_vert),
                                       onPressed: () {
@@ -346,7 +347,6 @@ class StockAdderState extends State<StockAdder> {
         ledgerID: currentLedgerID!,
         stockName: _stockName,
         unit: _unit,
-        balance: 0.0,
         createDate: DateTime.now(),
         updateDate: DateTime.now(),
         isActive: true);
@@ -355,7 +355,6 @@ class StockAdderState extends State<StockAdder> {
       'ledgerID': newStock.ledgerID,
       'stockName': newStock.stockName,
       'unit': newStock.unit,
-      'balance': newStock.balance,
       'createDate': Timestamp.fromDate(newStock.createDate),
       'updateDate': Timestamp.fromDate(newStock.updateDate),
       'isActive': newStock.isActive
@@ -464,5 +463,67 @@ class StockUpdaterState extends State<StockUpdater> {
     }).catchError((error) {
       print('Error getting document: $error');
     });
+  }
+}
+
+class BalanceText extends StatefulWidget {
+  final String documentID;
+
+  BalanceText(this.documentID);
+
+  @override
+  _BalanceTextState createState() => _BalanceTextState();
+}
+
+class _BalanceTextState extends State<BalanceText> {
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<double>(
+      future: getStockBalance(widget.documentID),
+      builder: (BuildContext context, AsyncSnapshot<double> snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          // While the future is not yet complete, show a progress indicator
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          // If the future encounters an error, show an error message
+          return Text('Error: ${snapshot.error}');
+        } else {
+          // If the future completes successfully, display the account balance
+          return Text('${snapshot.data}');
+        }
+      },
+    );
+  }
+
+  Future<double> getStockBalance(String stockID) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    CollectionReference transactions = firestore.collection('transactions');
+    CollectionReference stocks = firestore.collection('stocks');
+    double balance = 0;
+
+    Query userStockTransactions = transactions
+        .where('stockID', isEqualTo: stockID)
+        .where('isActive', isEqualTo: true)
+        .orderBy('createDate', descending: true);
+
+    DocumentReference stockRef = stocks.doc(stockID);
+    DocumentSnapshot docSnapshot = await stockRef.get();
+
+    QuerySnapshot querySnapshot = await userStockTransactions.get();
+    querySnapshot.docs.forEach((transactionDoc) {
+      Map<String, dynamic>? transactionData =
+          transactionDoc.data() as Map<String, dynamic>?;
+      if (transactionData!['transactionType'] == 'Add') {
+        balance += transactionData['amount'];
+      } else if (transactionData!['transactionType'] == 'Subtract') {
+        balance -= transactionData['amount'];
+      } else if (transactionData!['transactionType'] == 'Buy') {
+        balance += transactionData['amount'];
+      } else if (transactionData!['transactionType'] == 'Sell') {
+        balance -= transactionData['amount'];
+      }
+    });
+
+    return balance;
   }
 }

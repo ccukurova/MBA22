@@ -38,7 +38,7 @@ class ExchangerateRequester {
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
-      final rate = jsonResponse['info']['rate'] as double;
+      double rate = jsonResponse['result'] as double;
       return rate;
     } else {
       throw Exception('Failed to load rate');

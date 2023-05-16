@@ -4,7 +4,7 @@ import 'package:MBA22/Models/AccountModel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Helpers/SharedPreferencesManager.dart';
 import 'package:MBA22/Models/LedgerModel.dart';
-import '../Services/RatesRequester.dart';
+import '../Services/ExchangerateRequester.dart';
 import 'MainPage.dart';
 import 'AccountTransactionPage.dart';
 
@@ -135,7 +135,7 @@ class _AccountsPage extends State<AccountsPage> {
                                 onTap: () {
                                   setAccountID(document);
                                   setAccountType(document);
-                                  Navigator.push(
+                                  Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(
                                           builder: (context) =>
@@ -144,26 +144,7 @@ class _AccountsPage extends State<AccountsPage> {
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    FutureBuilder<double>(
-                                      future: getAccountBalance(documentId),
-                                      builder: (BuildContext context,
-                                          AsyncSnapshot<double> snapshot) {
-                                        if (snapshot.connectionState ==
-                                            ConnectionState.waiting) {
-                                          // While the future is not yet complete, show a progress indicator
-                                          return Center(
-                                              child:
-                                                  CircularProgressIndicator());
-                                        } else if (snapshot.hasError) {
-                                          // If the future encounters an error, show an error message
-                                          return Text(
-                                              'Error: ${snapshot.error}');
-                                        } else {
-                                          // If the future completes successfully, display the account balance
-                                          return Text('${snapshot.data}');
-                                        }
-                                      },
-                                    ), // Pass the document ID as a parameter
+                                    BalanceText(documentId),
                                     IconButton(
                                       icon: Icon(Icons.more_vert),
                                       onPressed: () {
@@ -194,11 +175,50 @@ class _AccountsPage extends State<AccountsPage> {
                                                         // do something
                                                         String documentId =
                                                             document.id;
+
+                                                        Query
+                                                            userAccountTransactions =
+                                                            transactions
+                                                                .where(
+                                                                    'accountID',
+                                                                    arrayContains:
+                                                                        documentId)
+                                                                .where(
+                                                                    'isActive',
+                                                                    isEqualTo:
+                                                                        true)
+                                                                .orderBy(
+                                                                    'createDate',
+                                                                    descending:
+                                                                        true);
+                                                        firestore.runTransaction(
+                                                            (transaction) async {
+                                                          QuerySnapshot
+                                                              snapshot =
+                                                              await userAccountTransactions
+                                                                  .get();
+                                                          List<DocumentSnapshot>
+                                                              documents =
+                                                              snapshot.docs;
+                                                          for (DocumentSnapshot document
+                                                              in documents) {
+                                                            await transaction
+                                                                .update(
+                                                                    document
+                                                                        .reference,
+                                                                    {
+                                                                  'isActive':
+                                                                      false
+                                                                });
+                                                          }
+                                                        });
+
                                                         await accounts
                                                             .doc(documentId)
                                                             .update({
                                                           'isActive': false
                                                         });
+
                                                         await accounts
                                                             .doc(documentId)
                                                             .update({
@@ -246,66 +266,6 @@ class _AccountsPage extends State<AccountsPage> {
         ],
       ),
     );
-  }
-
-  Future<double> getAccountBalance(String accountID) async {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-    CollectionReference transactions = firestore.collection('transactions');
-    CollectionReference accounts = firestore.collection('accounts');
-    double balance = 0;
-    String accountType = ''; // declare as a string
-
-    Query userAccountTransactions = transactions
-        .where('accountID', arrayContains: accountID)
-        .where('isActive', isEqualTo: true)
-        .orderBy('createDate', descending: true);
-
-    DocumentReference accountRef = accounts.doc(accountID);
-    DocumentSnapshot docSnapshot = await accountRef.get();
-    if (docSnapshot.exists) {
-      accountType = docSnapshot.get('accountType');
-    }
-
-    QuerySnapshot querySnapshot = await userAccountTransactions.get();
-    querySnapshot.docs.forEach((transactionDoc) {
-      Map<String, dynamic>? transactionData =
-          transactionDoc.data() as Map<String, dynamic>?;
-      if (transactionData!['transactionType'] == 'Collection' &&
-          accountType == 'External') {
-        balance -= transactionData['totalPrice'];
-      } else if (transactionData!['transactionType'] == 'Collection' &&
-          accountType == 'Internal') {
-        balance += transactionData['totalPrice'];
-      } else if (transactionData!['transactionType'] == 'Payment' &&
-          accountType == 'External') {
-        balance += transactionData['totalPrice'];
-      } else if (transactionData!['transactionType'] == 'Payment' &&
-          accountType == 'Internal') {
-        balance -= transactionData['totalPrice'];
-      } else if (transactionData!['transactionType'] == 'Buy' &&
-          accountType == 'External') {
-        balance += transactionData['totalPrice'];
-      } else if (transactionData!['transactionType'] == 'Buy' &&
-          accountType == 'Internal') {
-        balance -= transactionData['totalPrice'];
-      } else if (transactionData!['transactionType'] == 'Sell' &&
-          accountType == 'External') {
-        balance -= transactionData['totalPrice'];
-      } else if (transactionData!['transactionType'] == 'Sell' &&
-          accountType == 'Internal') {
-        balance += transactionData['totalPrice'];
-      } else if (transactionData!['transactionType'] == 'Increase') {
-        balance += transactionData['totalPrice'];
-      } else if (transactionData!['transactionType'] == 'Decrease') {
-        balance -= transactionData['totalPrice'];
-      } else if (transactionData!['transactionType'] == 'Income') {
-        balance += transactionData['totalPrice'];
-      } else if (transactionData!['transactionType'] == 'Outcome') {
-        balance -= transactionData['totalPrice'];
-      }
-    });
-
-    return balance;
   }
 }
 
@@ -466,7 +426,6 @@ class _AccountAdder extends State<AccountAdder> {
         accountName: _accountName,
         accountType: _accountType,
         unit: _unit,
-        balance: 0,
         createDate: DateTime.now(),
         updateDate: DateTime.now(),
         isActive: true);
@@ -476,7 +435,6 @@ class _AccountAdder extends State<AccountAdder> {
       'accountName': newAccount.accountName,
       'accountType': newAccount.accountType,
       'unit': newAccount.unit,
-      'balance': newAccount.balance,
       'createDate': Timestamp.fromDate(newAccount.createDate),
       'updateDate': Timestamp.fromDate(newAccount.updateDate),
       'isActive': newAccount.isActive
@@ -592,5 +550,115 @@ class AccountUpdaterState extends State<AccountUpdater> {
     }).catchError((error) {
       print('Error getting document: $error');
     });
+  }
+}
+
+class BalanceText extends StatefulWidget {
+  final String documentID;
+
+  BalanceText(this.documentID);
+
+  @override
+  _BalanceTextState createState() => _BalanceTextState();
+}
+
+class _BalanceTextState extends State<BalanceText> {
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<double>(
+      future: getAccountBalance(widget.documentID),
+      builder: (BuildContext context, AsyncSnapshot<double> snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          // While the future is not yet complete, show a progress indicator
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          // If the future encounters an error, show an error message
+          return Text('Error: ${snapshot.error}');
+        } else {
+          // If the future completes successfully, display the account balance
+          return Text('${snapshot.data}');
+        }
+      },
+    );
+  }
+
+  Future<double> getAccountBalance(String accountID) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    CollectionReference transactions = firestore.collection('transactions');
+    CollectionReference accounts = firestore.collection('accounts');
+    double balance = 0;
+    String accountType = ''; // declare as a string
+
+    Query userAccountTransactions = transactions
+        .where('accountID', arrayContains: accountID)
+        .where('isActive', isEqualTo: true)
+        .orderBy('createDate', descending: true);
+
+    DocumentReference accountRef = accounts.doc(accountID);
+    DocumentSnapshot docSnapshot = await accountRef.get();
+    if (docSnapshot.exists) {
+      accountType = docSnapshot.get('accountType');
+    }
+
+    QuerySnapshot querySnapshot = await userAccountTransactions.get();
+    querySnapshot.docs.forEach((transactionDoc) {
+      Map<String, dynamic>? transactionData =
+          transactionDoc.data() as Map<String, dynamic>?;
+      if (transactionData!['transactionType'] == 'Collection' &&
+          accountType == 'External') {
+        balance -= transactionData['total'];
+      } else if (transactionData!['transactionType'] == 'Collection' &&
+          accountType == 'Internal') {
+        if (transactionData['currencies'][0] !=
+            transactionData['currencies'][1]) {
+          balance += transactionData['convertedTotal'];
+        } else {
+          balance += transactionData['total'];
+        }
+      } else if (transactionData!['transactionType'] == 'Payment' &&
+          accountType == 'External') {
+        balance += transactionData['total'];
+      } else if (transactionData!['transactionType'] == 'Payment' &&
+          accountType == 'Internal') {
+        if (transactionData['currencies'][0] !=
+            transactionData['currencies'][1]) {
+          balance -= transactionData['convertedTotal'];
+        } else {
+          balance -= transactionData['total'];
+        }
+      } else if (transactionData!['transactionType'] == 'Buy' &&
+          accountType == 'External') {
+        balance += transactionData['total'];
+      } else if (transactionData!['transactionType'] == 'Buy' &&
+          accountType == 'Internal') {
+        if (transactionData['currencies'][0] !=
+            transactionData['currencies'][1]) {
+          balance -= transactionData['convertedTotal'];
+        } else {
+          balance -= transactionData['total'];
+        }
+      } else if (transactionData!['transactionType'] == 'Sell' &&
+          accountType == 'External') {
+        balance -= transactionData['total'];
+      } else if (transactionData!['transactionType'] == 'Sell' &&
+          accountType == 'Internal') {
+        if (transactionData['currencies'][0] !=
+            transactionData['currencies'][1]) {
+          balance += transactionData['convertedTotal'];
+        } else {
+          balance += transactionData['total'];
+        }
+      } else if (transactionData!['transactionType'] == 'Increase') {
+        balance += transactionData['total'];
+      } else if (transactionData!['transactionType'] == 'Decrease') {
+        balance -= transactionData['total'];
+      } else if (transactionData!['transactionType'] == 'Income') {
+        balance += transactionData['total'];
+      } else if (transactionData!['transactionType'] == 'Outcome') {
+        balance -= transactionData['total'];
+      }
+    });
+
+    return balance;
   }
 }

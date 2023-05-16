@@ -11,7 +11,7 @@ import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:syncfusion_flutter_charts/sparkcharts.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'Charts/PieChart.dart';
-import 'package:MBA22/Services/RatesRequester.dart';
+import '../Services/ExchangerateRequester.dart';
 import '../constants.dart';
 import 'package:intl/intl.dart';
 
@@ -26,13 +26,90 @@ class _MainPage extends State<MainPage> {
   final SharedPreferencesManager prefs = SharedPreferencesManager();
   int touchedGroupIndex = -1;
   CarouselController buttonCarouselController = CarouselController();
+  double sumOfRevenue = 0.0;
+  double sumOfExpense = 0.0;
 
   TooltipBehavior _tooltipBehavior = TooltipBehavior(enable: true);
+
+  Future<void> setUserID() async {
+    await prefs.getString("userID").then((value) {
+      setState(() {
+        currentUserID = value;
+      });
+    });
+  }
+
+  Future<void> setLedgerID() async {
+    await prefs.getString("ledgerID").then((value) {
+      setState(() {
+        currentLedgerID = value;
+      });
+    });
+  }
+
+  Future<void> setSumOfRevenue() async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    CollectionReference transactions = firestore.collection('transactions');
+    Query userAccountTransactions = transactions
+        .where('ledgerID', isEqualTo: currentLedgerID)
+        .where('isActive', isEqualTo: true)
+        .where('transactionType',
+            whereIn: ['Sell', 'Collection', 'Decrease', 'Income']);
+
+    double totalRevenue = 0;
+
+    try {
+      QuerySnapshot snapshot = await userAccountTransactions.get();
+      ExchangerateRequester requester = new ExchangerateRequester();
+      for (DocumentSnapshot doc in snapshot.docs) {
+        double convertedCurrency =
+            await requester.getRate(doc['currencies'][0], 'TRY', doc['total']);
+        totalRevenue += convertedCurrency;
+      }
+    } catch (error) {
+      print('Error getting transactions: $error');
+    }
+
+    setState(() {
+      sumOfRevenue = totalRevenue;
+    });
+  }
+
+  Future<void> setSumOfExpense() async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    CollectionReference transactions = firestore.collection('transactions');
+    Query userAccountTransactions = transactions
+        .where('ledgerID', isEqualTo: currentLedgerID)
+        .where('isActive', isEqualTo: true)
+        .where('transactionType',
+            whereIn: ['Buy', 'Payment', 'Increase', 'Outcome']);
+
+    double totalExpense = 0;
+
+    try {
+      QuerySnapshot snapshot = await userAccountTransactions.get();
+      ExchangerateRequester requester = new ExchangerateRequester();
+      for (DocumentSnapshot doc in snapshot.docs) {
+        double convertedCurrency =
+            await requester.getRate(doc['currencies'][0], 'TRY', doc['total']);
+        totalExpense += convertedCurrency;
+      }
+    } catch (error) {
+      print('Error getting transactions: $error');
+    }
+
+    setState(() {
+      sumOfExpense = totalExpense;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
-    getUserID();
-    getLedgerID();
+    setUserID();
+    setLedgerID();
+    setSumOfRevenue();
+    setSumOfExpense();
   }
 
   @override
@@ -145,150 +222,85 @@ class _MainPage extends State<MainPage> {
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(mainAxisAlignment: MainAxisAlignment.center, children: <
-                      Widget>[
-                    Text(
-                      'Net:',
-                      style: TextStyle(
-                        fontSize: 24.0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                    FutureBuilder<double>(
-                      future: getSumOfRevenue(currentLedgerID!),
-                      builder: (context, revenueSnapshot) {
-                        if (revenueSnapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return Center(child: CircularProgressIndicator());
-                        }
-                        if (revenueSnapshot.hasError) {
-                          return Center(child: Text("Error loading revenue"));
-                        }
-                        return FutureBuilder<double>(
-                          future: getSumOfExpense(currentLedgerID!),
-                          builder: (context, expenseSnapshot) {
-                            if (expenseSnapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return Center(child: CircularProgressIndicator());
-                            }
-                            if (expenseSnapshot.hasError) {
-                              return Center(
-                                  child: Text("Error loading expenses"));
-                            }
-                            final double revenue = revenueSnapshot.data ?? 0;
-                            final double expense = expenseSnapshot.data ?? 0;
-                            final double balance = revenue - expense;
-
-                            if (balance > 0)
-                              return Center(
-                                child: Text(
-                                  balance.toString(),
-                                  style: TextStyle(
-                                    fontSize: 24.0,
-                                    color: Colors.green,
-                                  ),
-                                ),
-                              );
-                            if (balance < 0)
-                              return Center(
-                                child: Text(
-                                  balance.toString(),
-                                  style: TextStyle(
-                                    fontSize: 24.0,
-                                    color: Colors.red,
-                                  ),
-                                ),
-                              );
-                            return Center(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Text(
+                            'Net:',
+                            style: TextStyle(
+                              fontSize: 24.0,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          if (sumOfRevenue - sumOfExpense > 0)
+                            Center(
                               child: Text(
-                                balance.toString(),
+                                (sumOfRevenue - sumOfExpense).toString(),
                                 style: TextStyle(
                                   fontSize: 24.0,
+                                  color: Colors.green,
+                                ),
+                              ),
+                            ),
+                          if (sumOfRevenue - sumOfExpense < 0)
+                            Center(
+                              child: Text(
+                                (sumOfRevenue - sumOfExpense).toString(),
+                                style: TextStyle(
+                                  fontSize: 24.0,
+                                  color: Colors.red,
+                                ),
+                              ),
+                            )
+                        ]),
+                    SizedBox(height: 10.0),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            Row(children: [
+                              Text(
+                                'Revenue:',
+                                style: TextStyle(
+                                  fontSize: 18.0,
                                   color: Colors.grey[600],
                                 ),
                               ),
-                            );
-                          },
-                        );
-                      },
-                    )
-                  ]),
-                  SizedBox(height: 10.0),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Row(children: [
-                        Text(
-                          'Revenue:',
-                          style: TextStyle(
-                            fontSize: 18.0,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        FutureBuilder<double>(
-                          future: getSumOfRevenue(currentLedgerID!),
-                          builder: (BuildContext context,
-                              AsyncSnapshot<double> snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              // While the future is being fetched, display a loading spinner
-                              return CircularProgressIndicator();
-                            } else if (snapshot.hasError) {
-                              // If there was an error fetching the data, display an error message
-                              return Text('Error: ${snapshot.error}');
-                            } else {
-                              // If the future has completed successfully, display the data
-                              return Text(
-                                snapshot.data.toString(),
+                              Text(
+                                sumOfRevenue.toString(),
                                 style: TextStyle(
                                   fontSize: 18.0,
                                   color: Colors.green,
                                 ),
-                              );
-                            }
-                          },
-                        )
-                      ]),
-                      SizedBox(width: 30),
-                      Row(children: [
-                        Text(
-                          'Expense:',
-                          style: TextStyle(
-                            fontSize: 18.0,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        FutureBuilder<double>(
-                          future: getSumOfExpense(currentLedgerID!),
-                          builder: (BuildContext context,
-                              AsyncSnapshot<double> snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              // While the future is being fetched, display a loading spinner
-                              return CircularProgressIndicator();
-                            } else if (snapshot.hasError) {
-                              // If there was an error fetching the data, display an error message
-                              return Text('Error: ${snapshot.error}');
-                            } else {
-                              // If the future has completed successfully, display the data
-                              return Text(
-                                snapshot.data.toString(),
+                              )
+                            ]),
+                            SizedBox(width: 30),
+                            Row(children: [
+                              Text(
+                                'Expense:',
+                                style: TextStyle(
+                                  fontSize: 18.0,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              Text(
+                                sumOfExpense.toString(),
                                 style: TextStyle(
                                   fontSize: 18.0,
                                   color: Colors.red,
                                 ),
-                              );
-                            }
-                          },
-                        )
-                      ]),
-                    ],
-                  ),
-                ],
-              ),
+                              )
+                            ]),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ]),
             ),
           ),
           SizedBox(height: 30),
@@ -299,57 +311,17 @@ class _MainPage extends State<MainPage> {
           ),
           SizedBox(height: 30),
           showFutureTransactions(),
+          SizedBox(height: 30),
+          Text(
+            'Upcoming to-dos',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 30),
+          showFutureTodos(),
         ]),
       ),
     );
-  }
-
-  Future<double> getSumOfRevenue(String ledgerID) async {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-    CollectionReference transactions = firestore.collection('transactions');
-    Query userAccountTransactions = transactions
-        .where('ledgerID', isEqualTo: ledgerID)
-        .where('isActive', isEqualTo: true)
-        .where('transactionType',
-            whereIn: ['Sell', 'Collection', 'Decrease', 'Income']);
-
-    double totalRevenue = 0;
-
-    try {
-      QuerySnapshot snapshot = await userAccountTransactions.get();
-      snapshot.docs.forEach((DocumentSnapshot doc) {
-        totalRevenue += doc['totalPrice'];
-        print(doc['totalPrice']);
-      });
-    } catch (error) {
-      print('Error getting transactions: $error');
-    }
-
-    return totalRevenue;
-  }
-
-  Future<double> getSumOfExpense(String ledgerID) async {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-    CollectionReference transactions = firestore.collection('transactions');
-    Query userAccountTransactions = transactions
-        .where('ledgerID', isEqualTo: ledgerID)
-        .where('isActive', isEqualTo: true)
-        .where('transactionType',
-            whereIn: ['Buy', 'Payment', 'Increase', 'Outcome']);
-
-    double totalExpense = 0;
-
-    try {
-      QuerySnapshot snapshot = await userAccountTransactions.get();
-      snapshot.docs.forEach((DocumentSnapshot doc) {
-        print(doc['totalPrice']);
-        totalExpense += doc['totalPrice'];
-      });
-    } catch (error) {
-      print('Error getting transactions: $error');
-    }
-
-    return totalExpense;
   }
 
   Future<List<PieData>> getPieList(String ledgerID) async {
@@ -371,14 +343,14 @@ class _MainPage extends State<MainPage> {
                 doc['transactionType'] == 'Increase') &&
             doc['categoryName'] != '') {
           String categoryName = doc['categoryName'];
-          double totalPrice = doc['totalPrice'];
+          double total = doc['total'];
           categoryList[categoryName] =
-              (categoryList[categoryName] ?? 0) + totalPrice;
+              (categoryList[categoryName] ?? 0) + total;
         }
       });
 
-      categoryList.forEach((categoryName, totalPrice) {
-        PieData newData = PieData(categoryName, totalPrice, categoryName);
+      categoryList.forEach((categoryName, total) {
+        PieData newData = PieData(categoryName, total, categoryName);
         pieData.add(newData);
       });
 
@@ -505,7 +477,9 @@ class _MainPage extends State<MainPage> {
           stockID: doc['stockID'],
           transactionType: doc['transactionType'],
           amount: doc['amount'],
-          totalPrice: doc['totalPrice'],
+          total: doc['total'],
+          convertedTotal: doc['convertedTotal'],
+          currencies: doc['currencies'],
           price: doc['price'],
           transactionDetail: doc['transactionDetail'],
           categoryName: doc['categoryName'],
@@ -523,7 +497,9 @@ class _MainPage extends State<MainPage> {
         'stockID': newTransaction.stockID,
         'transactionType': newTransaction.transactionType,
         'amount': newTransaction.amount,
-        'totalPrice': newTransaction.totalPrice,
+        'total': newTransaction.total,
+        'convertedTotal': newTransaction.convertedTotal,
+        'currencies': newTransaction.currencies,
         'price': newTransaction.price,
         'transactionDetail': newTransaction.transactionDetail,
         'categoryName': newTransaction.categoryName,
@@ -538,22 +514,6 @@ class _MainPage extends State<MainPage> {
     } catch (e) {
       print('Error caught: $e');
     }
-  }
-
-  Future<void> getUserID() async {
-    await prefs.getString("userID").then((value) {
-      setState(() {
-        currentUserID = value;
-      });
-    });
-  }
-
-  Future<void> getLedgerID() async {
-    prefs.getString("ledgerID").then((value) {
-      setState(() {
-        currentLedgerID = value;
-      });
-    });
   }
 
   Widget showFutureTransactions() {
@@ -572,11 +532,18 @@ class _MainPage extends State<MainPage> {
     Query ledgerTransactions = transactions
         .where('ledgerID', isEqualTo: currentLedgerID)
         .where('isActive', isEqualTo: true)
+        .where('period', whereIn: [
+          'For once',
+          'Every day',
+          'Every week',
+          'Every month',
+          'Every year'
+        ])
         .where('targetDate', isNotEqualTo: zeroDate)
         .orderBy('targetDate', descending: true);
     return Container(
-        width: 700,
-        height: 500,
+        width: 400,
+        height: 400,
         child: SingleChildScrollView(
             child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -625,7 +592,7 @@ class _MainPage extends State<MainPage> {
                                           if (data['transactionType'] ==
                                               'Increase')
                                             Text(
-                                              '+${data['totalPrice'].toString()}',
+                                              '+${data['total'].toString()}',
                                               style: TextStyle(
                                                   color: Colors.green,
                                                   fontSize: 20),
@@ -634,7 +601,7 @@ class _MainPage extends State<MainPage> {
                                           if (data['transactionType'] ==
                                               'Decrease')
                                             Text(
-                                              '-${data['totalPrice'].toString()}',
+                                              '-${data['total'].toString()}',
                                               style: TextStyle(
                                                   color: Colors.red,
                                                   fontSize: 20),
@@ -642,7 +609,7 @@ class _MainPage extends State<MainPage> {
                                           if (data['transactionType'] ==
                                               'Income')
                                             Text(
-                                              '+${data['totalPrice'].toString()}',
+                                              '+${data['total'].toString()}',
                                               style: TextStyle(
                                                   color: Colors.green,
                                                   fontSize: 20),
@@ -651,7 +618,7 @@ class _MainPage extends State<MainPage> {
                                           if (data['transactionType'] ==
                                               'Outcome')
                                             Text(
-                                              '-${data['totalPrice'].toString()}',
+                                              '-${data['total'].toString()}',
                                               style: TextStyle(
                                                   color: Colors.red,
                                                   fontSize: 20),
@@ -724,10 +691,7 @@ class _MainPage extends State<MainPage> {
                                 Text(
                                     '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
                                 SizedBox(height: 10),
-                                if (data['targetDate'] !=
-                                    Timestamp.fromDate(
-                                        DateTime.fromMillisecondsSinceEpoch(0,
-                                            isUtc: true)))
+                                if (data['period'] != 'Now')
                                   Container(
                                     width: 250,
                                     padding: EdgeInsets.all(5),
@@ -778,7 +742,7 @@ class _MainPage extends State<MainPage> {
                                   children: [
                                     if (data['transactionType'] == 'Collection')
                                       Text(
-                                        '+${data['totalPrice'].toString()}',
+                                        '+${data['total'].toString()} ${data['currencies'][0]}',
                                         style: TextStyle(
                                           color: Colors.green,
                                           fontSize: 20,
@@ -786,15 +750,15 @@ class _MainPage extends State<MainPage> {
                                       ),
                                     if (data['transactionType'] == 'Payment')
                                       Text(
-                                        '-${data['totalPrice'].toString()} ',
+                                        '-${data['total'].toString()} ${data['currencies'][0]}',
                                         style: TextStyle(
                                           color: Colors.red,
                                           fontSize: 20,
                                         ),
                                       ),
-                                    if (data['totalPrice'] == 0)
+                                    if (data['total'] == 0)
                                       Text(
-                                        data['totalPrice'].toString(),
+                                        data['total'].toString(),
                                         style: TextStyle(fontSize: 20),
                                       ),
                                   ],
@@ -892,10 +856,7 @@ class _MainPage extends State<MainPage> {
                               Text(
                                   '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
                               SizedBox(height: 10),
-                              if (data['targetDate'] !=
-                                  Timestamp.fromDate(
-                                      DateTime.fromMillisecondsSinceEpoch(0,
-                                          isUtc: true)))
+                              if (data['period'] != 'Now')
                                 Container(
                                   width: 250,
                                   padding: EdgeInsets.all(5),
@@ -944,7 +905,7 @@ class _MainPage extends State<MainPage> {
                                   children: [
                                     if (data['transactionType'] == 'Buy')
                                       Text(
-                                        '-${data['totalPrice'].toString()}',
+                                        '-${data['total'].toString()} ${data['currencies'][0]}',
                                         style: TextStyle(
                                           color: Colors.red,
                                           fontSize: 20,
@@ -952,15 +913,15 @@ class _MainPage extends State<MainPage> {
                                       ),
                                     if (data['transactionType'] == 'Sell')
                                       Text(
-                                        '+${data['totalPrice'].toString()} ',
+                                        '+${data['total'].toString()} ${data['currencies'][0]}',
                                         style: TextStyle(
                                           color: Colors.green,
                                           fontSize: 20,
                                         ),
                                       ),
-                                    if (data['totalPrice'] == 0)
+                                    if (data['total'] == 0)
                                       Text(
-                                        data['totalPrice'].toString(),
+                                        data['total'].toString(),
                                         style: TextStyle(fontSize: 20),
                                       ),
                                   ],
@@ -1023,7 +984,7 @@ class _MainPage extends State<MainPage> {
                             ]),
                             subtitle: Column(children: [
                               Text(
-                                '${data['amount']}x${data['price'].toString()}=${data['totalPrice']}',
+                                '${data['amount']}x${data['price'].toString()}=${data['total']}',
                                 style: TextStyle(fontSize: 12),
                               ),
                               FutureBuilder<List<String>>(
@@ -1062,10 +1023,7 @@ class _MainPage extends State<MainPage> {
                               Text(
                                   '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
                               SizedBox(height: 10),
-                              if (data['targetDate'] !=
-                                  Timestamp.fromDate(
-                                      DateTime.fromMillisecondsSinceEpoch(0,
-                                          isUtc: true)))
+                              if (data['period'] != 'Now')
                                 Container(
                                   width: 250,
                                   padding: EdgeInsets.all(5),
@@ -1089,7 +1047,6 @@ class _MainPage extends State<MainPage> {
                                     ],
                                   ),
                                 ),
-                              SizedBox(height: 10)
                             ]),
                           ),
                         );
@@ -1103,6 +1060,202 @@ class _MainPage extends State<MainPage> {
             ),
           ],
         )));
+  }
+
+  void showNoteUpdaterDialog(
+      BuildContext context, DocumentSnapshot<Object?> document) async {
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+            //content: NoteUpdater(document),
+            );
+      },
+    );
+  }
+
+  Widget showFutureTodos() {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    CollectionReference notes = firestore.collection('notes');
+
+    if (currentLedgerID == null) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    Query userNotes = notes
+        .where('ledgerID', isEqualTo: currentLedgerID)
+        .where('isActive', isEqualTo: true)
+        .orderBy('updateDate', descending: true);
+    return Container(
+        width: 400,
+        height: 400,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.all(10.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                StreamBuilder<QuerySnapshot>(
+                  stream: userNotes.snapshots(),
+                  builder: (BuildContext context,
+                      AsyncSnapshot<QuerySnapshot> snapshot) {
+                    if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    }
+
+                    if (snapshot.hasData && snapshot.data != null) {
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: snapshot.data!.docs.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          DocumentSnapshot document =
+                              snapshot.data!.docs[index];
+                          Map<String, dynamic> data =
+                              document.data() as Map<String, dynamic>;
+                          bool showIcons = false;
+
+                          if (data['noteType'] == 'To do')
+                            return InkWell(
+                              onTap: () {},
+                              child: ListTile(
+                                  title: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(data['noteType']),
+                                        Text(data['heading']),
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            IconButton(
+                                              icon: Icon(Icons.more_vert),
+                                              onPressed: () {
+                                                setState(() {
+                                                  showModalBottomSheet(
+                                                    context: context,
+                                                    builder:
+                                                        (BuildContext context) {
+                                                      return Container(
+                                                        child: Column(
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
+                                                          children: <Widget>[
+                                                            ListTile(
+                                                              leading: Icon(
+                                                                  Icons.edit),
+                                                              title: Text(
+                                                                  'Update'),
+                                                              onTap: () {
+                                                                // do something
+                                                                Navigator.pop(
+                                                                    context);
+                                                                showNoteUpdaterDialog(
+                                                                    context,
+                                                                    document);
+                                                              },
+                                                            ),
+                                                            ListTile(
+                                                              leading: Icon(
+                                                                  Icons.delete),
+                                                              title: Text(
+                                                                  'Delete'),
+                                                              onTap: () async {
+                                                                // do something
+                                                                String
+                                                                    documentId =
+                                                                    document.id;
+                                                                await notes
+                                                                    .doc(
+                                                                        documentId)
+                                                                    .update({
+                                                                  'isActive':
+                                                                      false
+                                                                });
+                                                                await notes
+                                                                    .doc(
+                                                                        documentId)
+                                                                    .update({
+                                                                  'updateDate':
+                                                                      DateTime
+                                                                          .now()
+                                                                });
+                                                                Navigator.pop(
+                                                                    context);
+                                                              },
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      );
+                                                    },
+                                                  );
+                                                });
+                                              },
+                                            ),
+                                          ],
+                                        )
+                                      ]),
+                                  subtitle: Column(children: [
+                                    Text(data['noteDetail']),
+                                    Row(children: [
+                                      if (data['targetDate'] == DateTime(0))
+                                        Text(DateFormat('dd-MM-yyyy – kk:mm')
+                                            .format(data['createDate']
+                                                .toDate()
+                                                .toLocal())),
+                                      if (data['targetDate'] != DateTime(0))
+                                        Text(DateFormat('dd-MM-yyyy – kk:mm')
+                                            .format(data['targetDate']
+                                                .toDate()
+                                                .toLocal())),
+                                    ]),
+                                    SizedBox(height: 25),
+                                    SizedBox(height: 10),
+                                    if (data['period'] != 'Now')
+                                      Container(
+                                        width: 250,
+                                        padding: EdgeInsets.all(5),
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(8.0),
+                                          color: Colors.blue,
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.access_time,
+                                              size: 16.0,
+                                              color: Colors.white,
+                                            ),
+                                            SizedBox(width: 4.0),
+                                            Text(
+                                              '${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())} / ${data['period']}',
+                                              style: TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    SizedBox(height: 10)
+                                  ])),
+                            );
+                        },
+                      );
+                    } else {
+                      return Text('No data available');
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        ));
   }
 }
 

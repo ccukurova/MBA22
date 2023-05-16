@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../Helpers/SharedPreferencesManager.dart';
 import 'package:MBA22/Models/LedgerModel.dart';
 import '../Models/TransactionModel.dart';
+import '../Services/ExchangerateRequester.dart';
 import 'MainPage.dart';
 import 'package:intl/intl.dart';
 import 'package:textfield_search/textfield_search.dart';
@@ -361,10 +362,18 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                                         flex: 2),
                                   ]),
                                   subtitle: Column(children: [
-                                    Text(
-                                      '${data['amount']}x${data['price'].toString()}=${data['totalPrice']}',
-                                      style: TextStyle(fontSize: 12),
-                                    ),
+                                    if (data['currencies'][0] !=
+                                        data['currencies'][1])
+                                      Text(
+                                        '${data['amount']}x${data['price'].toString()}=${data['total']} ${data['currencies'][0]} (${data['convertedTotal']} ${data['currencies'][1]})',
+                                        style: TextStyle(fontSize: 12),
+                                      ),
+                                    if (data['currencies'][0] ==
+                                        data['currencies'][1])
+                                      Text(
+                                        '${data['amount']}x${data['price'].toString()}=${data['total']} ${data['currencies'][0]}',
+                                        style: TextStyle(fontSize: 12),
+                                      ),
                                     FutureBuilder<List<String>>(
                                       future: Future.wait([
                                         getAccountNameByID(
@@ -503,14 +512,14 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
   String period = 'Now';
   String transactionDetail = '';
   double amount = 0.0;
-  double totalPrice = 0.0;
+  double total = 0.0;
   double price = 0.0;
   final SharedPreferencesManager prefs = SharedPreferencesManager();
 
   String dropDownValueUnit = 'Now';
   String selectedTransactionType = 'Add';
 
-  String totalPriceOutput = "Total price";
+  String totalOutput = "Total price";
   String sourceAccountValidator = "";
   String externalAccountValidator = "";
   String selectedCategory = "Choose a category";
@@ -936,13 +945,16 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                             sourceAccountController.text;
                         String selectedExternalAccountID =
                             externalAccountController.text;
+                        List<String> currencies = ['stock', 'stock'];
                         if (_formKey.currentState!.validate()) {
                           _formKey.currentState!.save();
                           createStockTransaction(
                               selectedTransactionType,
                               amount,
-                              totalPrice,
                               price,
+                              total,
+                              total,
+                              currencies,
                               transactionDetail,
                               selectedSourceAccountID,
                               selectedExternalAccountID,
@@ -1048,10 +1060,10 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                         setState(() {
                           try {
                             amount = double.tryParse(value)!;
-                            totalPrice = amount * price;
-                            totalPriceOutput = totalPrice.toString();
+                            total = amount * price;
+                            totalOutput = total.toString();
                             print(
-                                'amount = ${amount.toString()} price= ${price.toString()} totalPrice= ${totalPrice.toString()}');
+                                'amount = ${amount.toString()} price= ${price.toString()} total= ${total.toString()}');
                           } catch (e) {
                             print(e);
                           }
@@ -1094,10 +1106,10 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                         setState(() {
                           try {
                             price = double.tryParse(value)!;
-                            totalPrice = amount * price;
-                            totalPriceOutput = totalPrice.toString();
+                            total = amount * price;
+                            totalOutput = total.toString();
                             print(
-                                'amount = ${amount.toString()} price= ${price.toString()} totalPrice= ${totalPrice.toString()}');
+                                'amount = ${amount.toString()} price= ${price.toString()} total= ${total.toString()}');
                           } catch (e) {
                             print(e);
                           }
@@ -1112,7 +1124,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                       ),
                     ),
                     Text(
-                      totalPriceOutput,
+                      totalOutput,
                       style: TextStyle(
                         fontSize: 16.0,
                         fontWeight: FontWeight.bold,
@@ -1275,7 +1287,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                       ),
                     SizedBox(height: 25.0),
                     ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         DateTime targetDate;
                         if (period != "Now") {
                           targetDate = DateTime(
@@ -1319,11 +1331,49 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                         } else {
                           if (_formKey.currentState!.validate()) {
                             _formKey.currentState!.save();
+
+                            late String baseCurrency;
+                            late String targetCurrency;
+
+                            Query _selectedExternalAccountQuery = accounts
+                                .where('accountName',
+                                    isEqualTo: externalAccountController.text)
+                                .limit(1);
+                            QuerySnapshot selectedExternalAccountSnapshot =
+                                await _selectedExternalAccountQuery.get();
+
+                            selectedExternalAccountSnapshot.docs
+                                .forEach((element) {
+                              baseCurrency = element['unit'];
+                            });
+
+                            Query _selectedSourceAccountQuery = accounts
+                                .where('accountName',
+                                    isEqualTo: sourceAccountController.text)
+                                .limit(1);
+                            QuerySnapshot selectedSourceAccountSnapshot =
+                                await _selectedSourceAccountQuery.get();
+
+                            selectedSourceAccountSnapshot.docs
+                                .forEach((element) {
+                              targetCurrency = element['unit'];
+                            });
+
+                            List<String> currencies = [
+                              baseCurrency,
+                              targetCurrency
+                            ];
+
+                            double convertedTotal = await calculateCurrency(
+                                total, baseCurrency, targetCurrency);
+
                             createStockTransaction(
                                 selectedTransactionType,
                                 amount,
                                 price,
-                                totalPrice,
+                                total,
+                                convertedTotal,
+                                currencies,
                                 transactionDetail,
                                 selectedSourceAccount,
                                 selectedExternalAccount,
@@ -1352,7 +1402,9 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
       String _selectedTransactionType,
       double _amount,
       double _price,
-      double _totalPrice,
+      double _total,
+      double _convertedTotal,
+      List<String> _currencies,
       String _transactionDetail,
       String _selectedSourceAccount,
       String _selectedExternalAccount,
@@ -1418,7 +1470,9 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
           stockID: currentStockID!,
           transactionType: selectedTransactionType,
           amount: _amount,
-          totalPrice: _totalPrice,
+          convertedTotal: _convertedTotal,
+          currencies: _currencies,
+          total: _total,
           price: _price,
           transactionDetail: _transactionDetail,
           categoryName: choosenCategory!,
@@ -1436,7 +1490,9 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
         'stockID': newAddStockTransaction.stockID,
         'transactionType': newAddStockTransaction.transactionType,
         'amount': newAddStockTransaction.amount,
-        'totalPrice': newAddStockTransaction.totalPrice,
+        'total': newAddStockTransaction.total,
+        'convertedTotal': newAddStockTransaction.convertedTotal,
+        'currencies': newAddStockTransaction.currencies,
         'price': newAddStockTransaction.price,
         'transactionDetail': newAddStockTransaction.transactionDetail,
         'categoryName': newAddStockTransaction.categoryName,
@@ -1451,71 +1507,6 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
     } catch (e) {
       print('Error caught: $e');
     }
-
-    try {
-      DocumentSnapshot documentSnapshot =
-          await stocks.doc(currentStockID).get();
-
-      double stockBalance = await documentSnapshot.get('balance');
-      if (newAddStockTransaction.transactionType == 'Buy' ||
-          newAddStockTransaction.transactionType == 'Add') {
-        await documentSnapshot.reference
-            .update({'balance': stockBalance + amount});
-      } else if (newAddStockTransaction.transactionType == 'Sell' ||
-          newAddStockTransaction.transactionType == 'Subtract') {
-        await documentSnapshot.reference
-            .update({'balance': stockBalance - amount});
-      }
-
-      if (newAddStockTransaction.transactionType == 'Buy' ||
-          newAddStockTransaction.transactionType == 'Sell') {
-        final sourceAccountDoc = firestore
-            .collection('accounts')
-            .doc(newAddStockTransaction.accountID[1]);
-        final snapshot = await sourceAccountDoc.get();
-        double sourceAccountBalance = 0;
-
-        if (snapshot.exists) {
-          final dataMap = snapshot.data();
-          sourceAccountBalance = dataMap!['balance'];
-        } else {
-          print('No document exists with ID');
-        }
-
-        final externalAccountDoc = firestore
-            .collection('accounts')
-            .doc(newAddStockTransaction.accountID[0]);
-        final externalAccountSnapshot = await externalAccountDoc.get();
-        double externalAccountBalance = 0;
-
-        if (externalAccountSnapshot.exists) {
-          final externalAccountDataMap = externalAccountSnapshot.data();
-          externalAccountBalance = externalAccountDataMap!['balance'];
-        } else {
-          print('No document exists with ID');
-        }
-
-        if (newAddStockTransaction.transactionType == 'Buy') {
-          await sourceAccountDoc.update({
-            'balance': sourceAccountBalance - newAddStockTransaction.totalPrice
-          });
-          await externalAccountDoc.update({
-            'balance':
-                externalAccountBalance + newAddStockTransaction.totalPrice
-          });
-        } else if (newAddStockTransaction.transactionType == 'Sell') {
-          await sourceAccountDoc.update({
-            'balance': sourceAccountBalance + newAddStockTransaction.totalPrice
-          });
-          await externalAccountDoc.update({
-            'balance':
-                externalAccountBalance - newAddStockTransaction.totalPrice
-          });
-        }
-      }
-    } catch (e) {
-      print('Error caught: $e');
-    }
   }
 
   Future<String> getChoosenCategory() async {
@@ -1526,5 +1517,17 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
     setState(() {
       selectedCategory = _selectedCategory;
     });
+  }
+
+  Future<double> calculateCurrency(
+      double total, String baseCurrency, String targetCurrency) async {
+    ExchangerateRequester requester = new ExchangerateRequester();
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    CollectionReference accounts = firestore.collection('accounts');
+
+    if (baseCurrency != targetCurrency) {
+      return await requester.getRate(baseCurrency, targetCurrency, total);
+    }
+    return total;
   }
 }

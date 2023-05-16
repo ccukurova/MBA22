@@ -11,6 +11,7 @@ import '../Models/TransactionModel.dart';
 import 'MainPage.dart';
 import 'package:intl/intl.dart';
 import 'package:textfield_search/textfield_search.dart';
+import '../Services/ExchangerateRequester.dart';
 
 class AccountTransactionPage extends StatefulWidget {
   @override
@@ -102,7 +103,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                     builder: (BuildContext context,
                         AsyncSnapshot<QuerySnapshot> snapshot) {
                       if (snapshot.hasError) {
-                        return Text('Error: ${snapshot.error}');
+                        return Text('Error1: ${snapshot.error}');
                       }
 
                       if (snapshot.hasData && snapshot.data != null) {
@@ -142,7 +143,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                 if (data['transactionType'] ==
                                                     'Increase')
                                                   Text(
-                                                    '+${data['totalPrice'].toString()}',
+                                                    '+${data['total'].toString()}',
                                                     style: TextStyle(
                                                         color: Colors.green,
                                                         fontSize: 20),
@@ -151,7 +152,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                 if (data['transactionType'] ==
                                                     'Decrease')
                                                   Text(
-                                                    '-${data['totalPrice'].toString()}',
+                                                    '-${data['total'].toString()}',
                                                     style: TextStyle(
                                                         color: Colors.red,
                                                         fontSize: 20),
@@ -159,7 +160,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                 if (data['transactionType'] ==
                                                     'Income')
                                                   Text(
-                                                    '+${data['totalPrice'].toString()}',
+                                                    '+${data['total'].toString()}',
                                                     style: TextStyle(
                                                         color: Colors.green,
                                                         fontSize: 20),
@@ -168,7 +169,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                 if (data['transactionType'] ==
                                                     'Outcome')
                                                   Text(
-                                                    '-${data['totalPrice'].toString()}',
+                                                    '-${data['total'].toString()}',
                                                     style: TextStyle(
                                                         color: Colors.red,
                                                         fontSize: 20),
@@ -320,7 +321,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                             'accountType'] ==
                                                         'External')
                                                   Text(
-                                                    '-${data['totalPrice'].toString()} ',
+                                                    '-${data['total'].toString()} ',
                                                     style: TextStyle(
                                                       color: Colors.red,
                                                       fontSize: 20,
@@ -332,7 +333,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                             'accountType'] ==
                                                         'Internal')
                                                   Text(
-                                                    '+${data['totalPrice'].toString()}',
+                                                    '+${data['convertedTotal'].toString()}',
                                                     style: TextStyle(
                                                       color: Colors.green,
                                                       fontSize: 20,
@@ -344,7 +345,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                             'accountType'] ==
                                                         'External')
                                                   Text(
-                                                    '+${data['totalPrice'].toString()}',
+                                                    '+${data['total'].toString()}',
                                                     style: TextStyle(
                                                       color: Colors.green,
                                                       fontSize: 20,
@@ -356,16 +357,15 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                             'accountType'] ==
                                                         'Internal')
                                                   Text(
-                                                    '-${data['totalPrice'].toString()} ',
+                                                    '-${data['convertedTotal'].toString()} ',
                                                     style: TextStyle(
                                                       color: Colors.red,
                                                       fontSize: 20,
                                                     ),
                                                   ),
-                                                if (data['totalPrice'] == 0)
+                                                if (data['total'] == 0)
                                                   Text(
-                                                    data['totalPrice']
-                                                        .toString(),
+                                                    data['total'].toString(),
                                                     style:
                                                         TextStyle(fontSize: 20),
                                                   ),
@@ -375,7 +375,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                           );
                                         } else if (snapshot.hasError) {
                                           return Text(
-                                              'Error: ${snapshot.error}');
+                                              'Error2: ${snapshot.error}');
                                         } else {
                                           return CircularProgressIndicator();
                                         }
@@ -476,7 +476,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                 '$sourceAccountName $arrow $accountName');
                                           } else {
                                             return Text(
-                                                'Error: ${snapshot.error}');
+                                                'Error3: ${snapshot.error}');
                                           }
                                         } else {
                                           return CircularProgressIndicator();
@@ -550,7 +550,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                             'accountType'] ==
                                                         'External')
                                                   Text(
-                                                    '+${data['totalPrice'].toString()} ',
+                                                    '+${data['total'].toString()} ',
                                                     style: TextStyle(
                                                       color: Colors.green,
                                                       fontSize: 20,
@@ -562,7 +562,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                             'accountType'] ==
                                                         'Internal')
                                                   Text(
-                                                    '-${data['totalPrice'].toString()}',
+                                                    '-${data['convertedTotal'].toString()}',
                                                     style: TextStyle(
                                                       color: Colors.red,
                                                       fontSize: 20,
@@ -574,7 +574,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                             'accountType'] ==
                                                         'External')
                                                   Text(
-                                                    '-${data['totalPrice'].toString()}',
+                                                    '-${data['total'].toString()}',
                                                     style: TextStyle(
                                                       color: Colors.red,
                                                       fontSize: 20,
@@ -586,16 +586,15 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                             'accountType'] ==
                                                         'Internal')
                                                   Text(
-                                                    '+${data['totalPrice'].toString()} ',
+                                                    '+${data['convertedTotal'].toString()} ',
                                                     style: TextStyle(
                                                       color: Colors.green,
                                                       fontSize: 20,
                                                     ),
                                                   ),
-                                                if (data['totalPrice'] == 0)
+                                                if (data['total'] == 0)
                                                   Text(
-                                                    data['totalPrice']
-                                                        .toString(),
+                                                    data['total'].toString(),
                                                     style:
                                                         TextStyle(fontSize: 20),
                                                   ),
@@ -605,7 +604,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                           );
                                         } else if (snapshot.hasError) {
                                           return Text(
-                                              'Error: ${snapshot.error}');
+                                              'Error4: ${snapshot.error}');
                                         } else {
                                           return CircularProgressIndicator();
                                         }
@@ -672,10 +671,18 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                         flex: 2),
                                   ]),
                                   subtitle: Column(children: [
-                                    Text(
-                                      '${data['amount']}x${data['price'].toString()}=${data['totalPrice']}',
-                                      style: TextStyle(fontSize: 12),
-                                    ),
+                                    if (data['currencies'][0] !=
+                                        data['currencies'][1])
+                                      Text(
+                                        '${data['amount']}x${data['price'].toString()}=${data['total']} ${data['currencies'][0]} (${data['convertedTotal']} ${data['currencies'][1]})',
+                                        style: TextStyle(fontSize: 12),
+                                      ),
+                                    if (data['currencies'][0] ==
+                                        data['currencies'][1])
+                                      Text(
+                                        '${data['amount']}x${data['price'].toString()}=${data['total']} ${data['currencies'][0]}',
+                                        style: TextStyle(fontSize: 12),
+                                      ),
                                     FutureBuilder<List<String>>(
                                       future: Future.wait([
                                         getAccountNameByID(
@@ -710,7 +717,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                 '$sourceAccountName $arrow $accountName');
                                           } else {
                                             return Text(
-                                                'Error: ${snapshot.error}');
+                                                'Error5: ${snapshot.error}');
                                           }
                                         } else {
                                           return CircularProgressIndicator();
@@ -810,7 +817,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
 
   String period = 'Now';
   String transactionDetail = '';
-  double totalPrice = 0.0;
+  double total = 0.0;
   final SharedPreferencesManager prefs = SharedPreferencesManager();
 
   String dropDownValuePeriod = 'Now';
@@ -1118,7 +1125,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                       },
                       onSaved: (value) {
                         try {
-                          totalPrice = double.parse(value!);
+                          total = double.parse(value!);
                         } catch (e) {
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                             content: Text("Please enter a valid amount."),
@@ -1283,7 +1290,12 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                       ),
                     SizedBox(height: 25.0),
                     ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
+                        String baseCurrency;
+                        DocumentSnapshot currentAccount =
+                            await accounts.doc(currentAccountID).get();
+                        baseCurrency = currentAccount['unit'];
+                        List<String> currencies = [baseCurrency, baseCurrency];
                         DateTime targetDate;
                         if (period != "Now") {
                           targetDate = DateTime(
@@ -1301,7 +1313,9 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                           _formKey.currentState!.save();
                           createAccountTransaction(
                               selectedTransactionType,
-                              totalPrice,
+                              total,
+                              total,
+                              currencies,
                               transactionDetail,
                               "",
                               targetDate,
@@ -1350,7 +1364,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                               label: 'Internal account (source)',
                               controller: sourceAccountController);
                         } else if (snapshot.hasError) {
-                          return Text('Error: ${snapshot.error}');
+                          return Text('Error6: ${snapshot.error}');
                         } else {
                           return Center(child: CircularProgressIndicator());
                         }
@@ -1375,7 +1389,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                         },
                         onSaved: (value) {
                           try {
-                            totalPrice = double.parse(value!);
+                            total = double.parse(value!);
                           } catch (e) {
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                               content: Text("Please enter a valid amount."),
@@ -1539,8 +1553,9 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                       ),
                     SizedBox(height: 25.0),
                     ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         DateTime targetDate;
+
                         if (period != 'Now') {
                           targetDate = DateTime(
                             _selectedDate.year,
@@ -1555,10 +1570,11 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                         }
 
                         setState(() {
-                          sourceAccountValidator = "";
+                          sourceAccountValidator = '';
                         });
+
                         if (sourceAccountController.text == null ||
-                            sourceAccountController.text == "") {
+                            sourceAccountController.text == '') {
                           setState(() {
                             sourceAccountValidator =
                                 'Please enter a valid internal (source) account.';
@@ -1566,18 +1582,48 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                         } else {
                           if (_formKey.currentState!.validate()) {
                             _formKey.currentState!.save();
+
+                            late String baseCurrency;
+                            late String targetCurrency;
+                            late List<String> currencies;
+
+                            DocumentSnapshot currentAccount =
+                                await accounts.doc(currentAccountID).get();
+                            baseCurrency = currentAccount['unit'];
+                            Query _selectedSourceAccountQuery = accounts
+                                .where('accountName',
+                                    isEqualTo: sourceAccountController.text)
+                                .limit(1);
+                            QuerySnapshot selectedSourceAccountSnapshot =
+                                await _selectedSourceAccountQuery.get();
+
+                            selectedSourceAccountSnapshot.docs
+                                .forEach((element) {
+                              targetCurrency = element['unit'];
+                            });
+
+                            double convertedTotal = await calculateCurrency(
+                                total, baseCurrency, targetCurrency);
+
+                            currencies = [baseCurrency, targetCurrency];
+
                             createAccountTransaction(
-                                selectedTransactionType,
-                                totalPrice,
-                                transactionDetail,
-                                sourceAccountController.text,
-                                targetDate,
-                                selectedDuration,
-                                period);
+                              selectedTransactionType,
+                              total,
+                              convertedTotal,
+                              currencies,
+                              transactionDetail,
+                              sourceAccountController.text,
+                              targetDate,
+                              selectedDuration,
+                              period,
+                            );
                             Navigator.pop(context);
                           } else {
-                            sourceAccountValidator =
-                                'Please be sure all of your input values are valid.';
+                            setState(() {
+                              sourceAccountValidator =
+                                  'Please be sure all of your input values are valid.';
+                            });
                           }
                         }
                       },
@@ -1594,7 +1640,9 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
 
   Future<void> createAccountTransaction(
       String _selectedTransactionType,
-      double _totalPrice,
+      double total,
+      double convertedTotal,
+      List<String> _currencies,
       String _transactionDetail,
       String _selectedSourceAccount,
       DateTime _targetDate,
@@ -1637,7 +1685,9 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
           stockID: "",
           transactionType: _selectedTransactionType,
           amount: 0,
-          totalPrice: _totalPrice,
+          total: total,
+          convertedTotal: convertedTotal,
+          currencies: _currencies,
           price: 0,
           transactionDetail: _transactionDetail,
           categoryName: choosenCategory!,
@@ -1655,7 +1705,9 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
         'stockID': newAccountTransaction.stockID,
         'transactionType': newAccountTransaction.transactionType,
         'amount': newAccountTransaction.amount,
-        'totalPrice': newAccountTransaction.totalPrice,
+        'total': newAccountTransaction.total,
+        'convertedTotal': newAccountTransaction.convertedTotal,
+        'currencies': newAccountTransaction.currencies,
         'price': newAccountTransaction.price,
         'transactionDetail': newAccountTransaction.transactionDetail,
         'categoryName': newAccountTransaction.categoryName,
@@ -1670,48 +1722,6 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
     } catch (e) {
       print('Error caught: $e');
     }
-
-    try {
-      DocumentSnapshot documentSnapshot =
-          await accounts.doc(currentAccountID).get();
-
-      double accountBalance = await documentSnapshot.get('balance');
-      if (newAccountTransaction.transactionType == 'Payment' ||
-          newAccountTransaction.transactionType == 'Increase') {
-        await documentSnapshot.reference
-            .update({'balance': accountBalance + totalPrice});
-      } else if (newAccountTransaction.transactionType == 'Collection' ||
-          newAccountTransaction.transactionType == 'Decrease') {
-        await documentSnapshot.reference
-            .update({'balance': accountBalance - totalPrice});
-      }
-
-      if (newAccountTransaction.transactionType == 'Collection' ||
-          newAccountTransaction.transactionType == 'Payment') {
-        final sourceAccountDoc = firestore
-            .collection('accounts')
-            .doc(newAccountTransaction.accountID[1]);
-        final snapshot = await sourceAccountDoc.get();
-        double sourceAccountBalance = 0;
-
-        if (snapshot.exists) {
-          final dataMap = snapshot.data();
-          sourceAccountBalance = dataMap!['balance'];
-        } else {
-          print('No document exists with ID');
-        }
-
-        if (newAccountTransaction.transactionType == 'Collection') {
-          await sourceAccountDoc.update(
-              {'balance': sourceAccountBalance + newAccountTransaction.amount});
-        } else if (newAccountTransaction.transactionType == 'Payment') {
-          await sourceAccountDoc.update(
-              {'balance': sourceAccountBalance - newAccountTransaction.amount});
-        }
-      }
-    } catch (e) {
-      print('An error caught: $e');
-    }
   }
 
   Future<String> getChoosenCategory() async {
@@ -1722,5 +1732,17 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
     setState(() {
       selectedCategory = _selectedCategory;
     });
+  }
+
+  Future<double> calculateCurrency(
+      double total, String baseCurrency, String targetCurrency) async {
+    ExchangerateRequester requester = new ExchangerateRequester();
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    CollectionReference accounts = firestore.collection('accounts');
+
+    if (baseCurrency != targetCurrency) {
+      return await requester.getRate(baseCurrency, targetCurrency, total);
+    }
+    return total;
   }
 }
