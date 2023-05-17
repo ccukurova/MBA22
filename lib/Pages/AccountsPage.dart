@@ -576,7 +576,7 @@ class _BalanceTextState extends State<BalanceText> {
           return Text('Error: ${snapshot.error}');
         } else {
           // If the future completes successfully, display the account balance
-          return Text('${snapshot.data}');
+          return Text('${snapshot.data?.toStringAsFixed(2)}');
         }
       },
     );

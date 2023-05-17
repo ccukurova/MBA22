@@ -297,33 +297,32 @@ class NotePageState extends State<NotePage> {
                                       ]),
                                       SizedBox(height: 25),
                                       SizedBox(height: 10),
-                                      if (data['period'] != 'Now')
-                                        Container(
-                                          width: 250,
-                                          padding: EdgeInsets.all(5),
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(8.0),
-                                            color: Colors.blue,
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons.access_time,
-                                                size: 16.0,
-                                                color: Colors.white,
-                                              ),
-                                              SizedBox(width: 4.0),
-                                              Text(
-                                                '${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())} / ${data['period']}',
-                                                style: TextStyle(
-                                                    color: Colors.white),
-                                              ),
-                                            ],
-                                          ),
+                                      Container(
+                                        width: 250,
+                                        padding: EdgeInsets.all(5),
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(8.0),
+                                          color: Colors.blue,
                                         ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.access_time,
+                                              size: 16.0,
+                                              color: Colors.white,
+                                            ),
+                                            SizedBox(width: 4.0),
+                                            Text(
+                                              '${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())} / ${data['period']}',
+                                              style: TextStyle(
+                                                  color: Colors.white),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                       SizedBox(height: 10)
                                     ])),
                               );
@@ -386,7 +385,7 @@ class NoteAdderState extends State<NoteAdder> {
     'Every month',
     'Every year'
   ];
-  String selectedPeriod = 'For once';
+  String period = 'For once';
   String dropDownValuePeriod = 'For once';
   void _onDateSelected(DateTime selected) {
     setState(() {
@@ -524,16 +523,34 @@ class NoteAdderState extends State<NoteAdder> {
                   SizedBox(height: 16.0),
                   if (selectedNoteType == 'To do')
                     Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        SizedBox(height: 20),
                         Row(
                           children: [
                             Icon(
                               Icons.access_time,
                               size: 30.0,
                               color: Colors.blue,
+                            ),
+                            DropdownButton<String>(
+                              style: const TextStyle(fontSize: 14),
+                              value: dropDownValuePeriod,
+                              icon: const Icon(Icons.arrow_downward),
+                              elevation: 16,
+                              onChanged: (String? value) {
+                                // This is called when the user selects an item.
+                                setState(() {
+                                  dropDownValuePeriod = value!;
+                                  period = value;
+                                  print(value + dropDownValuePeriod + period);
+                                });
+                              },
+                              items: periodList.map<DropdownMenuItem<String>>(
+                                  (String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value),
+                                );
+                              }).toList(),
                             ),
                             GestureDetector(
                               child: Text(
@@ -543,7 +560,7 @@ class NoteAdderState extends State<NoteAdder> {
                                 final DateTime? selected = await showDatePicker(
                                   context: context,
                                   initialDate: _selectedDate,
-                                  firstDate: DateTime(1900),
+                                  firstDate: DateTime.now(),
                                   lastDate:
                                       DateTime.now().add(Duration(days: 365)),
                                 );
@@ -552,85 +569,47 @@ class NoteAdderState extends State<NoteAdder> {
                                 }
                               },
                             ),
-                            GestureDetector(
-                              child: Text(
-                                '  ${timeFormatter.format(DateTime(0, 0, 0, _selectedTime.hour, _selectedTime.minute))}',
-                                style: TextStyle(fontSize: 16),
-                              ),
-                              onTap: () async {
-                                final TimeOfDay? selected =
-                                    await showTimePicker(
-                                  context: context,
-                                  initialTime: _selectedTime,
-                                );
-                                if (selected != null) {
-                                  _onTimeSelected(selected);
-                                }
-                              },
-                            ),
                           ],
                         ),
-                        SizedBox(height: 16),
-                        DropdownButton<String>(
-                          value: dropDownValuePeriod,
-                          icon: const Icon(Icons.arrow_downward),
-                          elevation: 16,
-                          style: const TextStyle(color: Colors.deepPurple),
-                          underline: Container(
-                            height: 2,
-                            color: Colors.deepPurpleAccent,
-                          ),
-                          onChanged: (String? value) {
-                            // This is called when the user selects an item.
-                            setState(() {
-                              dropDownValuePeriod = value!;
-                              selectedPeriod = value;
-                            });
-                          },
-                          items: periodList
-                              .map<DropdownMenuItem<String>>((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList(),
-                        ),
-                        SizedBox(height: 25.0),
-                        if (dropDownValuePeriod != 'For once')
-                          Container(
-                            child: Row(
-                              children: [
-                                Text('Duration'),
-                                TextButton(
-                                  onPressed: () => {
-                                    if (selectedDuration > 1)
-                                      {
-                                        selectedDuration--,
-                                        duration.text =
-                                            selectedDuration.toString()
-                                      }
-                                    else if (selectedDuration == 1)
-                                      {duration.text = '∞'}
-                                  },
-                                  child: Text('<'),
-                                ),
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: duration,
+                        SizedBox(height: 20),
+                        if (period != 'For once')
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text('Duration'),
+                              TextButton(
+                                onPressed: () => {
+                                  if (selectedDuration > 1)
+                                    {
+                                      selectedDuration--,
+                                      duration.text =
+                                          selectedDuration.toString()
+                                    }
+                                  else if (selectedDuration == 1)
+                                    {duration.text = '∞'}
+                                },
+                                child: Text('<'),
+                              ),
+                              Container(
+                                width: 20,
+                                child: TextFormField(
+                                  controller: duration,
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
                                   ),
                                 ),
-                                TextButton(
-                                    onPressed: () => {
-                                          if (selectedDuration >= 1)
-                                            {
-                                              selectedDuration++,
-                                              duration.text =
-                                                  selectedDuration.toString()
-                                            }
-                                        },
-                                    child: Text('>')),
-                              ],
-                            ),
+                              ),
+                              TextButton(
+                                  onPressed: () => {
+                                        if (selectedDuration + 1 >= 1)
+                                          {
+                                            selectedDuration++,
+                                            duration.text =
+                                                selectedDuration.toString()
+                                          }
+                                      },
+                                  child: Text('>')),
+                            ],
                           ),
                       ],
                     ),
@@ -670,7 +649,7 @@ class NoteAdderState extends State<NoteAdder> {
         noteDetail: noteDetail,
         noteType: selectedNoteType,
         targetDate: targetDate,
-        period: selectedPeriod,
+        period: period,
         duration: 0,
         createDate: DateTime.now(),
         updateDate: DateTime.now(),
@@ -690,107 +669,3 @@ class NoteAdderState extends State<NoteAdder> {
     });
   }
 }
-
-// class StockUpdater extends StatefulWidget {
-//   final DocumentSnapshot<Object?> document;
-
-//   StockUpdater(this.document);
-
-//   @override
-//   StockUpdaterState createState() => StockUpdaterState();
-// }
-
-// class StockUpdaterState extends State<StockUpdater> {
-//   CollectionReference stocks = FirebaseFirestore.instance.collection('stocks');
-//   final _formKey = GlobalKey<FormState>();
-//   String stockName = '';
-//   String unit = '';
-//   final SharedPreferencesManager prefs = SharedPreferencesManager();
-
-//   FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-//   String initialUnit = '';
-//   List<String> unitList = <String>['Piece', 'kilogram'];
-//   String dropDownValueUnit = 'Piece';
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Stack(children: [
-//       Row(
-//         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//         children: [
-//           Text(
-//             'Update Stock',
-//             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-//           ),
-//           IconButton(
-//             icon: Icon(Icons.close),
-//             onPressed: () {
-//               Navigator.of(context).pop();
-//             },
-//           )
-//         ],
-//       ),
-//       Container(
-//         child: Padding(
-//           padding: EdgeInsets.only(left: 10, top: 60, right: 10, bottom: 10),
-//           child: Form(
-//             key: _formKey,
-//             child: SingleChildScrollView(
-//               child: Column(
-//                 mainAxisAlignment: MainAxisAlignment.center,
-//                 children: [
-//                   TextFormField(
-//                     initialValue: widget.document['stockName'],
-//                     decoration: InputDecoration(
-//                       labelText: 'Stock Name',
-//                       border: OutlineInputBorder(),
-//                     ),
-//                     validator: (value) {
-//                       if (value!.isEmpty) {
-//                         return 'Please enter a stock name.';
-//                       }
-//                       return null;
-//                     },
-//                     onSaved: (value) {
-//                       stockName = value!;
-//                     },
-//                   ),
-//                   SizedBox(height: 16.0),
-//                   ElevatedButton(
-//                     onPressed: () {
-//                       if (_formKey.currentState!.validate()) {
-//                         _formKey.currentState!.save();
-//                         updateStock(stockName, widget.document);
-//                         Navigator.pop(context);
-//                       }
-//                     },
-//                     child: Text('Update'),
-//                   ),
-//                 ],
-//               ),
-//             ),
-//           ),
-//         ),
-//       ),
-//     ]);
-//   }
-
-//   Future<void> updateStock(
-//       String _stockName, DocumentSnapshot<Object?> document) async {
-//     String? currentLedgerID = await prefs.getString("ledgerID");
-
-//     DocumentReference docRef = firestore.collection('stocks').doc(document.id);
-
-//     docRef.get().then((doc) {
-//       if (doc.exists) {
-//         docRef
-//             .update({'accountName': _stockName, 'updateDate': DateTime.now()});
-//       } else {
-//         print('Document does not exist!');
-//       }
-//     }).catchError((error) {
-//       print('Error getting document: $error');
-//     });
-//   }
-// }

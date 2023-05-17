@@ -138,7 +138,7 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                                                 if (data['transactionType'] ==
                                                     'Add')
                                                   Text(
-                                                    '+${data['amount'].toString()}',
+                                                    '+${data['amount'].toStringAsFixed(2)}',
                                                     style: TextStyle(
                                                         color: Colors.green,
                                                         fontSize: 20),
@@ -146,7 +146,7 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                                                 if (data['transactionType'] ==
                                                     'Subtract')
                                                   Text(
-                                                    '-${data['amount'].toString()}',
+                                                    '-${data['amount'].toStringAsFixed(2)}',
                                                     style: TextStyle(
                                                         color: Colors.red,
                                                         fontSize: 20),
@@ -154,7 +154,7 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                                                 if (data['totalAmount'] == 0)
                                                   Text(
                                                     data['totalAmount']
-                                                        .toString(),
+                                                        .toStringAsFixed(2),
                                                     style:
                                                         TextStyle(fontSize: 16),
                                                   ),
@@ -365,13 +365,13 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                                     if (data['currencies'][0] !=
                                         data['currencies'][1])
                                       Text(
-                                        '${data['amount']}x${data['price'].toString()}=${data['total']} ${data['currencies'][0]} (${data['convertedTotal']} ${data['currencies'][1]})',
+                                        '${data['amount']}x${data['price'].toStringAsFixed(2)}=${data['total'].toStringAsFixed(2)} ${data['currencies'][0]} (${data['convertedTotal']} ${data['currencies'][1]})',
                                         style: TextStyle(fontSize: 12),
                                       ),
                                     if (data['currencies'][0] ==
                                         data['currencies'][1])
                                       Text(
-                                        '${data['amount']}x${data['price'].toString()}=${data['total']} ${data['currencies'][0]}',
+                                        '${data['amount']}x${data['price'].toStringAsFixed(2)}=${data['total'].toStringAsFixed(2)} ${data['currencies'][0]}',
                                         style: TextStyle(fontSize: 12),
                                       ),
                                     FutureBuilder<List<String>>(
@@ -516,7 +516,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
   double price = 0.0;
   final SharedPreferencesManager prefs = SharedPreferencesManager();
 
-  String dropDownValueUnit = 'Now';
+  String dropDownValuePeriod = 'Now';
   String selectedTransactionType = 'Add';
 
   String totalOutput = "Total price";
@@ -604,6 +604,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
     final timeFormatter = DateFormat('HH:mm');
     const List<String> periodList = <String>[
       'Now',
+      'Past',
       'For once',
       'Every week',
       'Every month',
@@ -809,122 +810,140 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                             ],
                           ),
                         ),
-                        SizedBox(height: 16.0),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.center,
+                        SizedBox(height: 20),
+                        Row(
                           children: [
-                            SizedBox(height: 20),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.access_time,
-                                  size: 30.0,
-                                  color: Colors.blue,
-                                ),
-                                GestureDetector(
-                                  child: Text(
-                                      ' ${dateFormatter.format(_selectedDate)}', // Display selected date
-                                      style: TextStyle(fontSize: 16)),
-                                  onTap: () async {
-                                    final DateTime? selected =
-                                        await showDatePicker(
-                                      context: context,
-                                      initialDate: _selectedDate,
-                                      firstDate: DateTime(1900),
-                                      lastDate: DateTime.now()
-                                          .add(Duration(days: 365)),
-                                    );
-                                    if (selected != null) {
-                                      _onDateSelected(selected);
-                                    }
-                                  },
-                                ),
-                                GestureDetector(
-                                  child: Text(
-                                    '  ${timeFormatter.format(DateTime(0, 0, 0, _selectedTime.hour, _selectedTime.minute))}',
-                                    style: TextStyle(fontSize: 16),
-                                  ),
-                                  onTap: () async {
-                                    final TimeOfDay? selected =
-                                        await showTimePicker(
-                                      context: context,
-                                      initialTime: _selectedTime,
-                                    );
-                                    if (selected != null) {
-                                      _onTimeSelected(selected);
-                                    }
-                                  },
-                                ),
-                              ],
+                            Icon(
+                              Icons.access_time,
+                              size: 30.0,
+                              color: Colors.blue,
                             ),
+                            DropdownButton<String>(
+                              style: const TextStyle(fontSize: 14),
+                              value: dropDownValuePeriod,
+                              icon: const Icon(Icons.arrow_downward),
+                              elevation: 16,
+                              onChanged: (String? value) {
+                                // This is called when the user selects an item.
+                                setState(() {
+                                  dropDownValuePeriod = value!;
+                                  period = value;
+                                  print(value + dropDownValuePeriod + period);
+                                });
+                              },
+                              items: periodList.map<DropdownMenuItem<String>>(
+                                  (String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value),
+                                );
+                              }).toList(),
+                            ),
+                            if (period != 'Now' && period != 'Past')
+                              GestureDetector(
+                                child: Text(
+                                    ' ${dateFormatter.format(_selectedDate)}', // Display selected date
+                                    style: TextStyle(fontSize: 16)),
+                                onTap: () async {
+                                  final DateTime? selected =
+                                      await showDatePicker(
+                                    context: context,
+                                    initialDate: _selectedDate,
+                                    firstDate: DateTime.now(),
+                                    lastDate:
+                                        DateTime.now().add(Duration(days: 365)),
+                                  );
+                                  if (selected != null) {
+                                    _onDateSelected(selected);
+                                  }
+                                },
+                              ),
+                            if (period == 'Past')
+                              Builder(
+                                builder: (BuildContext context) {
+                                  return GestureDetector(
+                                    child: Text(
+                                      ' ${dateFormatter.format(_selectedDate)}',
+                                      style: TextStyle(fontSize: 16),
+                                    ),
+                                    onTap: () async {
+                                      final DateTime? selected =
+                                          await showDatePicker(
+                                        context: context,
+                                        initialDate: _selectedDate,
+                                        firstDate: DateTime(1900),
+                                        lastDate: DateTime.now(),
+                                      );
+                                      if (selected != null) {
+                                        _onDateSelected(selected);
+                                      }
+                                    },
+                                  );
+                                },
+                              ),
+                            if (period != 'Now')
+                              GestureDetector(
+                                child: Text(
+                                  '  ${timeFormatter.format(DateTime(0, 0, 0, _selectedTime.hour, _selectedTime.minute))}',
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                                onTap: () async {
+                                  final TimeOfDay? selected =
+                                      await showTimePicker(
+                                    context: context,
+                                    initialTime: _selectedTime,
+                                  );
+                                  if (selected != null) {
+                                    _onTimeSelected(selected);
+                                  }
+                                },
+                              ),
                           ],
                         ),
+                        SizedBox(height: 20),
+                        if (period != 'Now' &&
+                            period != 'For once' &&
+                            period != 'Past')
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text('Duration'),
+                              TextButton(
+                                onPressed: () => {
+                                  if (selectedDuration > 1)
+                                    {
+                                      selectedDuration--,
+                                      duration.text =
+                                          selectedDuration.toString()
+                                    }
+                                  else if (selectedDuration == 1)
+                                    {duration.text = '∞'}
+                                },
+                                child: Text('<'),
+                              ),
+                              Container(
+                                width: 20,
+                                child: TextFormField(
+                                  controller: duration,
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                  onPressed: () => {
+                                        if (selectedDuration + 1 >= 1)
+                                          {
+                                            selectedDuration++,
+                                            duration.text =
+                                                selectedDuration.toString()
+                                          }
+                                      },
+                                  child: Text('>')),
+                            ],
+                          ),
                       ],
                     ),
-                    SizedBox(height: 16), // Spacer
-
-                    DropdownButton<String>(
-                      value: dropDownValueUnit,
-                      icon: const Icon(Icons.arrow_downward),
-                      elevation: 16,
-                      style: const TextStyle(color: Colors.deepPurple),
-                      underline: Container(
-                        height: 2,
-                        color: Colors.deepPurpleAccent,
-                      ),
-                      onChanged: (String? value) {
-                        // This is called when the user selects an item.
-                        setState(() {
-                          dropDownValueUnit = value!;
-                          period = value;
-                          print(value + dropDownValueUnit + period);
-                        });
-                      },
-                      items: periodList
-                          .map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    ),
-                    SizedBox(height: 25.0),
-                    if (period != 'Now')
-                      Container(
-                        child: Row(
-                          children: [
-                            Text('Duration'),
-                            TextButton(
-                              onPressed: () => {
-                                if (selectedDuration > 1)
-                                  {
-                                    selectedDuration--,
-                                    duration.text = selectedDuration.toString()
-                                  }
-                                else if (selectedDuration == 1)
-                                  {duration.text = '∞'}
-                              },
-                              child: Text('<'),
-                            ),
-                            Expanded(
-                              child: TextFormField(
-                                controller: duration,
-                              ),
-                            ),
-                            TextButton(
-                                onPressed: () => {
-                                      if (selectedDuration + 1 >= 1)
-                                        {
-                                          selectedDuration++,
-                                          duration.text =
-                                              selectedDuration.toString()
-                                        }
-                                    },
-                                child: Text('>')),
-                          ],
-                        ),
-                      ),
                     SizedBox(height: 25.0),
                     ElevatedButton(
                       onPressed: () {
@@ -1063,7 +1082,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                             total = amount * price;
                             totalOutput = total.toString();
                             print(
-                                'amount = ${amount.toString()} price= ${price.toString()} total= ${total.toString()}');
+                                'amount = ${amount.toString()} price= ${price.toStringAsFixed(2)} total= ${total.toStringAsFixed(2)}');
                           } catch (e) {
                             print(e);
                           }
@@ -1109,7 +1128,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                             total = amount * price;
                             totalOutput = total.toString();
                             print(
-                                'amount = ${amount.toString()} price= ${price.toString()} total= ${total.toString()}');
+                                'amount = ${amount.toString()} price= ${price.toStringAsFixed(2)} total= ${total.toStringAsFixed(2)}');
                           } catch (e) {
                             print(e);
                           }
@@ -1169,122 +1188,140 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                             ],
                           ),
                         ),
-                        SizedBox(height: 16.0),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.center,
+                        SizedBox(height: 20),
+                        Row(
                           children: [
-                            SizedBox(height: 20),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.access_time,
-                                  size: 30.0,
-                                  color: Colors.blue,
-                                ),
-                                GestureDetector(
-                                  child: Text(
-                                      ' ${dateFormatter.format(_selectedDate)}', // Display selected date
-                                      style: TextStyle(fontSize: 16)),
-                                  onTap: () async {
-                                    final DateTime? selected =
-                                        await showDatePicker(
-                                      context: context,
-                                      initialDate: _selectedDate,
-                                      firstDate: DateTime(1900),
-                                      lastDate: DateTime.now()
-                                          .add(Duration(days: 365)),
-                                    );
-                                    if (selected != null) {
-                                      _onDateSelected(selected);
-                                    }
-                                  },
-                                ),
-                                GestureDetector(
-                                  child: Text(
-                                    '  ${timeFormatter.format(DateTime(0, 0, 0, _selectedTime.hour, _selectedTime.minute))}',
-                                    style: TextStyle(fontSize: 16),
-                                  ),
-                                  onTap: () async {
-                                    final TimeOfDay? selected =
-                                        await showTimePicker(
-                                      context: context,
-                                      initialTime: _selectedTime,
-                                    );
-                                    if (selected != null) {
-                                      _onTimeSelected(selected);
-                                    }
-                                  },
-                                ),
-                              ],
+                            Icon(
+                              Icons.access_time,
+                              size: 30.0,
+                              color: Colors.blue,
                             ),
+                            DropdownButton<String>(
+                              style: const TextStyle(fontSize: 14),
+                              value: dropDownValuePeriod,
+                              icon: const Icon(Icons.arrow_downward),
+                              elevation: 16,
+                              onChanged: (String? value) {
+                                // This is called when the user selects an item.
+                                setState(() {
+                                  dropDownValuePeriod = value!;
+                                  period = value;
+                                  print(value + dropDownValuePeriod + period);
+                                });
+                              },
+                              items: periodList.map<DropdownMenuItem<String>>(
+                                  (String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value),
+                                );
+                              }).toList(),
+                            ),
+                            if (period != 'Now' && period != 'Past')
+                              GestureDetector(
+                                child: Text(
+                                    ' ${dateFormatter.format(_selectedDate)}', // Display selected date
+                                    style: TextStyle(fontSize: 16)),
+                                onTap: () async {
+                                  final DateTime? selected =
+                                      await showDatePicker(
+                                    context: context,
+                                    initialDate: _selectedDate,
+                                    firstDate: DateTime.now(),
+                                    lastDate:
+                                        DateTime.now().add(Duration(days: 365)),
+                                  );
+                                  if (selected != null) {
+                                    _onDateSelected(selected);
+                                  }
+                                },
+                              ),
+                            if (period == 'Past')
+                              Builder(
+                                builder: (BuildContext context) {
+                                  return GestureDetector(
+                                    child: Text(
+                                      ' ${dateFormatter.format(_selectedDate)}',
+                                      style: TextStyle(fontSize: 16),
+                                    ),
+                                    onTap: () async {
+                                      final DateTime? selected =
+                                          await showDatePicker(
+                                        context: context,
+                                        initialDate: _selectedDate,
+                                        firstDate: DateTime(1900),
+                                        lastDate: DateTime.now(),
+                                      );
+                                      if (selected != null) {
+                                        _onDateSelected(selected);
+                                      }
+                                    },
+                                  );
+                                },
+                              ),
+                            if (period != 'Now')
+                              GestureDetector(
+                                child: Text(
+                                  '  ${timeFormatter.format(DateTime(0, 0, 0, _selectedTime.hour, _selectedTime.minute))}',
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                                onTap: () async {
+                                  final TimeOfDay? selected =
+                                      await showTimePicker(
+                                    context: context,
+                                    initialTime: _selectedTime,
+                                  );
+                                  if (selected != null) {
+                                    _onTimeSelected(selected);
+                                  }
+                                },
+                              ),
                           ],
                         ),
+                        SizedBox(height: 20),
+                        if (period != 'Now' &&
+                            period != 'For once' &&
+                            period != 'Past')
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text('Duration'),
+                              TextButton(
+                                onPressed: () => {
+                                  if (selectedDuration > 1)
+                                    {
+                                      selectedDuration--,
+                                      duration.text =
+                                          selectedDuration.toString()
+                                    }
+                                  else if (selectedDuration == 1)
+                                    {duration.text = '∞'}
+                                },
+                                child: Text('<'),
+                              ),
+                              Container(
+                                width: 20,
+                                child: TextFormField(
+                                  controller: duration,
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                  onPressed: () => {
+                                        if (selectedDuration + 1 >= 1)
+                                          {
+                                            selectedDuration++,
+                                            duration.text =
+                                                selectedDuration.toString()
+                                          }
+                                      },
+                                  child: Text('>')),
+                            ],
+                          ),
                       ],
                     ),
-                    SizedBox(height: 20), // Spacer
-
-                    DropdownButton<String>(
-                      value: dropDownValueUnit,
-                      icon: const Icon(Icons.arrow_downward),
-                      elevation: 16,
-                      style: const TextStyle(color: Colors.deepPurple),
-                      underline: Container(
-                        height: 2,
-                        color: Colors.deepPurpleAccent,
-                      ),
-                      onChanged: (String? value) {
-                        // This is called when the user selects an item.
-                        setState(() {
-                          dropDownValueUnit = value!;
-                          period = value;
-                          print(value + dropDownValueUnit + period);
-                        });
-                      },
-                      items: periodList
-                          .map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    ),
-                    SizedBox(height: 25.0),
-                    if (period != 'Now')
-                      Container(
-                        child: Row(
-                          children: [
-                            Text('Duration'),
-                            TextButton(
-                              onPressed: () => {
-                                if (selectedDuration > 1)
-                                  {
-                                    selectedDuration--,
-                                    duration.text = selectedDuration.toString()
-                                  }
-                                else if (selectedDuration == 1)
-                                  {duration.text = '∞'}
-                              },
-                              child: Text('<'),
-                            ),
-                            Expanded(
-                              child: TextFormField(
-                                controller: duration,
-                              ),
-                            ),
-                            TextButton(
-                                onPressed: () => {
-                                      if (selectedDuration + 1 >= 1)
-                                        {
-                                          selectedDuration++,
-                                          duration.text =
-                                              selectedDuration.toString()
-                                        }
-                                    },
-                                child: Text('>')),
-                          ],
-                        ),
-                      ),
                     SizedBox(height: 25.0),
                     ElevatedButton(
                       onPressed: () async {

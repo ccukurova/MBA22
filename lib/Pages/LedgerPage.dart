@@ -103,7 +103,12 @@ class _LedgerPage extends State<LedgerPage> {
                                 document.data() as Map<String, dynamic>;
                             return InkWell(
                                 onTap: () {
-                                  navigateToMain(document);
+                                  setLedgerID(document);
+                                  Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              MainPage(document.id)));
                                 },
                                 child: ListTile(
                                     title: Text(data['ledgerName']),
@@ -207,12 +212,6 @@ class _LedgerPage extends State<LedgerPage> {
             ),
           ),
         ]));
-  }
-
-  Future<void> navigateToMain(DocumentSnapshot<Object?> document) async {
-    await setLedgerID(document);
-    Navigator.push(
-        context, MaterialPageRoute(builder: (context) => MainPage()));
   }
 
   void showShareLedger(
