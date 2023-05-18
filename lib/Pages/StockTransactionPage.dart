@@ -910,14 +910,16 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                               Text('Duration'),
                               TextButton(
                                 onPressed: () => {
-                                  if (selectedDuration > 1)
+                                  if (selectedDuration == 2)
+                                    {selectedDuration = -1, duration.text = '∞'}
+                                  else if (selectedDuration <= -1)
+                                    {}
+                                  else
                                     {
                                       selectedDuration--,
                                       duration.text =
                                           selectedDuration.toString()
                                     }
-                                  else if (selectedDuration == 1)
-                                    {duration.text = '∞'}
                                 },
                                 child: Text('<'),
                               ),
@@ -932,7 +934,13 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                               ),
                               TextButton(
                                   onPressed: () => {
-                                        if (selectedDuration + 1 >= 1)
+                                        if (selectedDuration <= -1)
+                                          {
+                                            selectedDuration = 2,
+                                            duration.text =
+                                                selectedDuration.toString()
+                                          }
+                                        else
                                           {
                                             selectedDuration++,
                                             duration.text =
@@ -946,7 +954,11 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                     ),
                     SizedBox(height: 25.0),
                     ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
+                        String baseCurrency;
+                        DocumentSnapshot currentStock =
+                            await accounts.doc().get();
+                        List<String> currencies = ['stock', 'stock'];
                         DateTime targetDate;
                         if (period != "Now") {
                           targetDate = DateTime(
@@ -960,27 +972,49 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                           targetDate = DateTime.fromMillisecondsSinceEpoch(0,
                               isUtc: true);
                         }
-                        String selectedSourceAccountID =
-                            sourceAccountController.text;
-                        String selectedExternalAccountID =
-                            externalAccountController.text;
-                        List<String> currencies = ['stock', 'stock'];
-                        if (_formKey.currentState!.validate()) {
+                        if (_formKey.currentState!.validate() &&
+                            selectedDurationText != "0" &&
+                            selectedDurationText != "1") {
                           _formKey.currentState!.save();
-                          createStockTransaction(
-                              selectedTransactionType,
-                              amount,
-                              price,
-                              total,
-                              total,
-                              currencies,
-                              transactionDetail,
-                              selectedSourceAccountID,
-                              selectedExternalAccountID,
-                              selectedDuration,
-                              targetDate,
-                              period);
-                          Navigator.pop(context);
+                          if (period == "Now" || period == "Past") {
+                            selectedDuration = 0;
+                          } else if (period == "For once") {
+                            selectedDuration = 1;
+                          }
+                          if (period == "Past" &&
+                              targetDate.compareTo(DateTime.now()) >= 0) {
+                            final snackBar = SnackBar(
+                              content: Text(
+                                  'Past target date cannot be greater than current date'),
+                              duration: Duration(seconds: 2),
+                            );
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(snackBar);
+                          } else if (period == "For once" &&
+                              targetDate.compareTo(DateTime.now()) <= 0) {
+                            final snackBar = SnackBar(
+                              content: Text(
+                                  'Future target date cannot be less than current date'),
+                              duration: Duration(seconds: 2),
+                            );
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(snackBar);
+                          } else {
+                            createStockTransaction(
+                                selectedTransactionType,
+                                amount,
+                                price,
+                                total,
+                                total,
+                                currencies,
+                                transactionDetail,
+                                sourceAccountController.text,
+                                externalAccountController.text,
+                                selectedDuration,
+                                targetDate,
+                                period);
+                            Navigator.pop(context);
+                          }
                         }
                       },
                       child: Text('Add'),
@@ -1288,14 +1322,16 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                               Text('Duration'),
                               TextButton(
                                 onPressed: () => {
-                                  if (selectedDuration > 1)
+                                  if (selectedDuration == 2)
+                                    {selectedDuration = -1, duration.text = '∞'}
+                                  else if (selectedDuration <= -1)
+                                    {}
+                                  else
                                     {
                                       selectedDuration--,
                                       duration.text =
                                           selectedDuration.toString()
                                     }
-                                  else if (selectedDuration == 1)
-                                    {duration.text = '∞'}
                                 },
                                 child: Text('<'),
                               ),
@@ -1310,7 +1346,13 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                               ),
                               TextButton(
                                   onPressed: () => {
-                                        if (selectedDuration + 1 >= 1)
+                                        if (selectedDuration <= -1)
+                                          {
+                                            selectedDuration = 2,
+                                            duration.text =
+                                                selectedDuration.toString()
+                                          }
+                                        else
                                           {
                                             selectedDuration++,
                                             duration.text =
@@ -1325,6 +1367,17 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                     SizedBox(height: 25.0),
                     ElevatedButton(
                       onPressed: () async {
+                        String baseCurrency;
+                        DocumentSnapshot currentStock =
+                            await accounts.doc().get();
+                        String selectedSourceAccount =
+                            sourceAccountController.text;
+                        String selectedExternalAccount =
+                            externalAccountController.text;
+                        setState(() {
+                          sourceAccountValidator = "";
+                          externalAccountValidator = "";
+                        });
                         DateTime targetDate;
                         if (period != "Now") {
                           targetDate = DateTime(
@@ -1338,89 +1391,103 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                           targetDate = DateTime.fromMillisecondsSinceEpoch(0,
                               isUtc: true);
                         }
-                        String selectedSourceAccount =
-                            sourceAccountController.text;
-                        String selectedExternalAccount =
-                            externalAccountController.text;
-
-                        setState(() {
-                          sourceAccountValidator = "";
-                          externalAccountValidator = "";
-                        });
-                        if (selectedSourceAccount == null ||
-                            selectedSourceAccount == "") {
-                          setState(() {
-                            sourceAccountValidator =
-                                'Please enter a valid internal (source) account.';
-                          });
-                        } else if (selectedExternalAccount == null ||
-                            selectedExternalAccount == "") {
-                          setState(() {
-                            externalAccountValidator =
-                                'Please enter a valid external account.';
-                          });
-                        } else if (selectedSourceAccount == null ||
-                            selectedSourceAccount == "") {
-                          setState(() {
-                            sourceAccountValidator =
-                                'Please enter a valid internal (source) account.';
-                          });
-                        } else {
-                          if (_formKey.currentState!.validate()) {
-                            _formKey.currentState!.save();
-
-                            late String baseCurrency;
-                            late String targetCurrency;
-
-                            Query _selectedExternalAccountQuery = accounts
-                                .where('accountName',
-                                    isEqualTo: externalAccountController.text)
-                                .limit(1);
-                            QuerySnapshot selectedExternalAccountSnapshot =
-                                await _selectedExternalAccountQuery.get();
-
-                            selectedExternalAccountSnapshot.docs
-                                .forEach((element) {
-                              baseCurrency = element['unit'];
-                            });
-
-                            Query _selectedSourceAccountQuery = accounts
-                                .where('accountName',
-                                    isEqualTo: sourceAccountController.text)
-                                .limit(1);
-                            QuerySnapshot selectedSourceAccountSnapshot =
-                                await _selectedSourceAccountQuery.get();
-
-                            selectedSourceAccountSnapshot.docs
-                                .forEach((element) {
-                              targetCurrency = element['unit'];
-                            });
-
-                            List<String> currencies = [
-                              baseCurrency,
-                              targetCurrency
-                            ];
-
-                            double convertedTotal = await calculateCurrency(
-                                total, baseCurrency, targetCurrency);
-
-                            createStockTransaction(
-                                selectedTransactionType,
-                                amount,
-                                price,
-                                total,
-                                convertedTotal,
-                                currencies,
-                                transactionDetail,
-                                selectedSourceAccount,
-                                selectedExternalAccount,
-                                selectedDuration,
-                                targetDate,
-                                period);
-                            Navigator.pop(context);
+                        if (_formKey.currentState!.validate() &&
+                            selectedDurationText != "0" &&
+                            selectedDurationText != "1") {
+                          _formKey.currentState!.save();
+                          if (period == "Now" || period == "Past") {
+                            selectedDuration = 0;
+                          } else if (period == "For once") {
+                            selectedDuration = 1;
+                          }
+                          if (period == "Past" &&
+                              targetDate.compareTo(DateTime.now()) >= 0) {
+                            final snackBar = SnackBar(
+                              content: Text(
+                                  'Past target date cannot be greater than current date'),
+                              duration: Duration(seconds: 2),
+                            );
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(snackBar);
+                          } else if (period == "For once" &&
+                              targetDate.compareTo(DateTime.now()) <= 0) {
+                            final snackBar = SnackBar(
+                              content: Text(
+                                  'Future target date cannot be less than current date'),
+                              duration: Duration(seconds: 2),
+                            );
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(snackBar);
                           } else {
-                            sourceAccountValidator =
-                                'Please be sure all of your input values are valid.';
+                            if (selectedSourceAccount == null ||
+                                selectedSourceAccount == "") {
+                              setState(() {
+                                sourceAccountValidator =
+                                    'Please enter a valid internal (source) account.';
+                              });
+                            } else if (selectedExternalAccount == null ||
+                                selectedExternalAccount == "") {
+                              setState(() {
+                                externalAccountValidator =
+                                    'Please enter a valid external account.';
+                              });
+                            } else if (selectedSourceAccount == null ||
+                                selectedSourceAccount == "") {
+                              setState(() {
+                                sourceAccountValidator =
+                                    'Please enter a valid internal (source) account.';
+                              });
+                            } else {
+                              late String baseCurrency;
+                              late String targetCurrency;
+
+                              Query _selectedExternalAccountQuery = accounts
+                                  .where('accountName',
+                                      isEqualTo: externalAccountController.text)
+                                  .limit(1);
+                              QuerySnapshot selectedExternalAccountSnapshot =
+                                  await _selectedExternalAccountQuery.get();
+
+                              selectedExternalAccountSnapshot.docs
+                                  .forEach((element) {
+                                baseCurrency = element['unit'];
+                              });
+
+                              Query _selectedSourceAccountQuery = accounts
+                                  .where('accountName',
+                                      isEqualTo: sourceAccountController.text)
+                                  .limit(1);
+                              QuerySnapshot selectedSourceAccountSnapshot =
+                                  await _selectedSourceAccountQuery.get();
+
+                              selectedSourceAccountSnapshot.docs
+                                  .forEach((element) {
+                                targetCurrency = element['unit'];
+                              });
+
+                              List<String> currencies = [
+                                baseCurrency,
+                                targetCurrency
+                              ];
+
+                              double convertedTotal = await calculateCurrency(
+                                  total, baseCurrency, targetCurrency);
+
+                              createStockTransaction(
+                                  selectedTransactionType,
+                                  amount,
+                                  price,
+                                  total,
+                                  convertedTotal,
+                                  currencies,
+                                  transactionDetail,
+                                  selectedSourceAccount,
+                                  selectedExternalAccount,
+                                  selectedDuration,
+                                  targetDate,
+                                  period);
+                              Navigator.pop(context);
+                            }
                           }
                         }
                       },
@@ -1458,6 +1525,12 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
     String externalAccountID = "";
     String? choosenCategory = await prefs.getString("choosenCategory");
     choosenCategory = choosenCategory ?? "";
+    bool isDone;
+    if (_selectedDuration == 0) {
+      isDone = true;
+    } else {
+      isDone = false;
+    }
 
     if (_selectedTransactionType == 'Buy' ||
         _selectedTransactionType == 'Sell') {
@@ -1516,7 +1589,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
           period: _period,
           duration: _selectedDuration,
           targetDate: _targetDate,
-          isDone: true,
+          isDone: isDone,
           createDate: DateTime.now(),
           updateDate: DateTime.now(),
           isActive: true);

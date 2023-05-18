@@ -592,7 +592,7 @@ class _BalanceTextState extends State<BalanceText> {
     Query userAccountTransactions = transactions
         .where('accountID', arrayContains: accountID)
         .where('isActive', isEqualTo: true)
-        .orderBy('createDate', descending: true);
+        .where('isDone', isEqualTo: true);
 
     DocumentReference accountRef = accounts.doc(accountID);
     DocumentSnapshot docSnapshot = await accountRef.get();

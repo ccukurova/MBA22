@@ -375,7 +375,7 @@ class NoteAdderState extends State<NoteAdder> {
   TextEditingController duration = TextEditingController();
 
   String selectedDurationText = "∞";
-  int selectedDuration = 1;
+  int selectedDuration = -1;
 
   String dropDownValueNoteType = 'Note';
 
@@ -579,14 +579,16 @@ class NoteAdderState extends State<NoteAdder> {
                               Text('Duration'),
                               TextButton(
                                 onPressed: () => {
-                                  if (selectedDuration > 1)
+                                  if (selectedDuration == 2)
+                                    {selectedDuration = -1, duration.text = '∞'}
+                                  else if (selectedDuration <= -1)
+                                    {}
+                                  else
                                     {
                                       selectedDuration--,
                                       duration.text =
                                           selectedDuration.toString()
                                     }
-                                  else if (selectedDuration == 1)
-                                    {duration.text = '∞'}
                                 },
                                 child: Text('<'),
                               ),
@@ -601,7 +603,13 @@ class NoteAdderState extends State<NoteAdder> {
                               ),
                               TextButton(
                                   onPressed: () => {
-                                        if (selectedDuration + 1 >= 1)
+                                        if (selectedDuration <= -1)
+                                          {
+                                            selectedDuration = 2,
+                                            duration.text =
+                                                selectedDuration.toString()
+                                          }
+                                        else
                                           {
                                             selectedDuration++,
                                             duration.text =
@@ -615,9 +623,9 @@ class NoteAdderState extends State<NoteAdder> {
                     ),
                   SizedBox(height: 25.0),
                   ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        _formKey.currentState!.save();
+                    onPressed: () async {
+                      DateTime targetDate;
+                      if (period != "Now") {
                         targetDate = DateTime(
                           _selectedDate.year,
                           _selectedDate.month,
@@ -625,8 +633,31 @@ class NoteAdderState extends State<NoteAdder> {
                           _selectedTime.hour,
                           _selectedTime.minute,
                         );
-                        createNote();
-                        Navigator.pop(context);
+                      } else {
+                        targetDate =
+                            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+                      }
+                      if (_formKey.currentState!.validate() &&
+                          selectedDurationText != "0" &&
+                          selectedDurationText != "1") {
+                        _formKey.currentState!.save();
+                        if (selectedNoteType == "To do" &&
+                            period == "For once") {
+                          selectedDuration = 1;
+                        }
+                        if (selectedNoteType == "To do" &&
+                            period == "For once" &&
+                            targetDate.compareTo(DateTime.now()) <= 0) {
+                          final snackBar = SnackBar(
+                            content: Text(
+                                'Future target date cannot be less than current date'),
+                            duration: Duration(seconds: 2),
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                        } else {
+                          createNote();
+                          Navigator.pop(context);
+                        }
                       }
                     },
                     child: Text('Add'),
@@ -650,7 +681,7 @@ class NoteAdderState extends State<NoteAdder> {
         noteType: selectedNoteType,
         targetDate: targetDate,
         period: period,
-        duration: 0,
+        duration: selectedDuration,
         createDate: DateTime.now(),
         updateDate: DateTime.now(),
         isActive: true);

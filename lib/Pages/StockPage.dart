@@ -504,7 +504,7 @@ class _BalanceTextState extends State<BalanceText> {
     Query userStockTransactions = transactions
         .where('stockID', isEqualTo: stockID)
         .where('isActive', isEqualTo: true)
-        .orderBy('createDate', descending: true);
+        .where('isDone', isEqualTo: true);
 
     DocumentReference stockRef = stocks.doc(stockID);
     DocumentSnapshot docSnapshot = await stockRef.get();

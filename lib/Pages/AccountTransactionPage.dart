@@ -839,7 +839,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
   TextEditingController duration = TextEditingController();
 
   String selectedDurationText = "∞";
-  int selectedDuration = 1;
+  int selectedDuration = -1;
 
   @override
   void initState() {
@@ -1275,14 +1275,16 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                               Text('Duration'),
                               TextButton(
                                 onPressed: () => {
-                                  if (selectedDuration > 1)
+                                  if (selectedDuration == 2)
+                                    {selectedDuration = -1, duration.text = '∞'}
+                                  else if (selectedDuration <= -1)
+                                    {}
+                                  else
                                     {
                                       selectedDuration--,
                                       duration.text =
                                           selectedDuration.toString()
                                     }
-                                  else if (selectedDuration == 1)
-                                    {duration.text = '∞'}
                                 },
                                 child: Text('<'),
                               ),
@@ -1297,7 +1299,13 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                               ),
                               TextButton(
                                   onPressed: () => {
-                                        if (selectedDuration + 1 >= 1)
+                                        if (selectedDuration <= -1)
+                                          {
+                                            selectedDuration = 2,
+                                            duration.text =
+                                                selectedDuration.toString()
+                                          }
+                                        else
                                           {
                                             selectedDuration++,
                                             duration.text =
@@ -1330,19 +1338,46 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                           targetDate = DateTime.fromMillisecondsSinceEpoch(0,
                               isUtc: true);
                         }
-                        if (_formKey.currentState!.validate()) {
+                        if (_formKey.currentState!.validate() &&
+                            selectedDurationText != "0" &&
+                            selectedDurationText != "1") {
                           _formKey.currentState!.save();
-                          createAccountTransaction(
-                              selectedTransactionType,
-                              total,
-                              total,
-                              currencies,
-                              transactionDetail,
-                              "",
-                              targetDate,
-                              selectedDuration,
-                              period);
-                          Navigator.pop(context);
+                          if (period == "Now" || period == "Past") {
+                            selectedDuration = 0;
+                          } else if (period == "For once") {
+                            selectedDuration = 1;
+                          }
+                          if (period == "Past" &&
+                              targetDate.compareTo(DateTime.now()) >= 0) {
+                            final snackBar = SnackBar(
+                              content: Text(
+                                  'Past target date cannot be greater than current date'),
+                              duration: Duration(seconds: 2),
+                            );
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(snackBar);
+                          } else if (period == "For once" &&
+                              targetDate.compareTo(DateTime.now()) <= 0) {
+                            final snackBar = SnackBar(
+                              content: Text(
+                                  'Future target date cannot be less than current date'),
+                              duration: Duration(seconds: 2),
+                            );
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(snackBar);
+                          } else {
+                            createAccountTransaction(
+                                selectedTransactionType,
+                                total,
+                                total,
+                                currencies,
+                                transactionDetail,
+                                "",
+                                targetDate,
+                                selectedDuration,
+                                period);
+                            Navigator.pop(context);
+                          }
                         }
                       },
                       child: Text('Add'),
@@ -1556,14 +1591,16 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                               Text('Duration'),
                               TextButton(
                                 onPressed: () => {
-                                  if (selectedDuration > 1)
+                                  if (selectedDuration == 2)
+                                    {selectedDuration = -1, duration.text = '∞'}
+                                  else if (selectedDuration <= -1)
+                                    {}
+                                  else
                                     {
                                       selectedDuration--,
                                       duration.text =
                                           selectedDuration.toString()
                                     }
-                                  else if (selectedDuration == 1)
-                                    {duration.text = '∞'}
                                 },
                                 child: Text('<'),
                               ),
@@ -1578,7 +1615,13 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                               ),
                               TextButton(
                                   onPressed: () => {
-                                        if (selectedDuration + 1 >= 1)
+                                        if (selectedDuration <= -1)
+                                          {
+                                            selectedDuration = 2,
+                                            duration.text =
+                                                selectedDuration.toString()
+                                          }
+                                        else
                                           {
                                             selectedDuration++,
                                             duration.text =
@@ -1593,9 +1636,13 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                     SizedBox(height: 25.0),
                     ElevatedButton(
                       onPressed: () async {
+                        String baseCurrency;
+                        DocumentSnapshot currentAccount =
+                            await accounts.doc(currentAccountID).get();
+                        baseCurrency = currentAccount['unit'];
+                        List<String> currencies = [baseCurrency, baseCurrency];
                         DateTime targetDate;
-
-                        if (period != 'Now') {
+                        if (period != "Now") {
                           targetDate = DateTime(
                             _selectedDate.year,
                             _selectedDate.month,
@@ -1607,62 +1654,93 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                           targetDate = DateTime.fromMillisecondsSinceEpoch(0,
                               isUtc: true);
                         }
-
-                        setState(() {
-                          sourceAccountValidator = '';
-                        });
-
-                        if (sourceAccountController.text == null ||
-                            sourceAccountController.text == '') {
-                          setState(() {
-                            sourceAccountValidator =
-                                'Please enter a valid internal (source) account.';
-                          });
-                        } else {
-                          if (_formKey.currentState!.validate()) {
-                            _formKey.currentState!.save();
-
-                            late String baseCurrency;
-                            late String targetCurrency;
-                            late List<String> currencies;
-
-                            DocumentSnapshot currentAccount =
-                                await accounts.doc(currentAccountID).get();
-                            baseCurrency = currentAccount['unit'];
-                            Query _selectedSourceAccountQuery = accounts
-                                .where('accountName',
-                                    isEqualTo: sourceAccountController.text)
-                                .limit(1);
-                            QuerySnapshot selectedSourceAccountSnapshot =
-                                await _selectedSourceAccountQuery.get();
-
-                            selectedSourceAccountSnapshot.docs
-                                .forEach((element) {
-                              targetCurrency = element['unit'];
-                            });
-
-                            double convertedTotal = await calculateCurrency(
-                                total, baseCurrency, targetCurrency);
-
-                            currencies = [baseCurrency, targetCurrency];
-
-                            createAccountTransaction(
-                              selectedTransactionType,
-                              total,
-                              convertedTotal,
-                              currencies,
-                              transactionDetail,
-                              sourceAccountController.text,
-                              targetDate,
-                              selectedDuration,
-                              period,
+                        if (_formKey.currentState!.validate() &&
+                            selectedDurationText != "0" &&
+                            selectedDurationText != "1") {
+                          _formKey.currentState!.save();
+                          if (period == "Now" || period == "Past") {
+                            selectedDuration = 0;
+                          } else if (period == "For once") {
+                            selectedDuration = 1;
+                          }
+                          if (period == "Past" &&
+                              targetDate.compareTo(DateTime.now()) >= 0) {
+                            final snackBar = SnackBar(
+                              content: Text(
+                                  'Past target date cannot be greater than current date'),
+                              duration: Duration(seconds: 2),
                             );
-                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(snackBar);
+                          } else if (period == "For once" &&
+                              targetDate.compareTo(DateTime.now()) <= 0) {
+                            final snackBar = SnackBar(
+                              content: Text(
+                                  'Future target date cannot be less than current date'),
+                              duration: Duration(seconds: 2),
+                            );
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(snackBar);
                           } else {
                             setState(() {
-                              sourceAccountValidator =
-                                  'Please be sure all of your input values are valid.';
+                              sourceAccountValidator = '';
                             });
+
+                            if (sourceAccountController.text == null ||
+                                sourceAccountController.text == '') {
+                              setState(() {
+                                sourceAccountValidator =
+                                    'Please enter a valid internal (source) account.';
+                              });
+                            } else {
+                              if (_formKey.currentState!.validate()) {
+                                _formKey.currentState!.save();
+
+                                late String baseCurrency;
+                                late String targetCurrency;
+                                late List<String> currencies;
+
+                                DocumentSnapshot currentAccount =
+                                    await accounts.doc(currentAccountID).get();
+                                baseCurrency = currentAccount['unit'];
+                                Query _selectedSourceAccountQuery = accounts
+                                    .where('accountName',
+                                        isEqualTo: sourceAccountController.text)
+                                    .limit(1);
+                                QuerySnapshot selectedSourceAccountSnapshot =
+                                    await _selectedSourceAccountQuery.get();
+
+                                selectedSourceAccountSnapshot.docs
+                                    .forEach((element) {
+                                  targetCurrency = element['unit'];
+                                });
+
+                                double convertedTotal = await calculateCurrency(
+                                    total, baseCurrency, targetCurrency);
+
+                                currencies = [baseCurrency, targetCurrency];
+
+                                bool isDone;
+
+                                createAccountTransaction(
+                                  selectedTransactionType,
+                                  total,
+                                  convertedTotal,
+                                  currencies,
+                                  transactionDetail,
+                                  sourceAccountController.text,
+                                  targetDate,
+                                  selectedDuration,
+                                  period,
+                                );
+                                Navigator.pop(context);
+                              } else {
+                                setState(() {
+                                  sourceAccountValidator =
+                                      'Please be sure all of your input values are valid.';
+                                });
+                              }
+                            }
                           }
                         }
                       },
@@ -1695,6 +1773,12 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
     String sourceAccountID = "";
     String? choosenCategory = await prefs.getString("choosenCategory");
     choosenCategory = choosenCategory ?? "";
+    bool isDone;
+    if (_selectedDuration == 0) {
+      isDone = true;
+    } else {
+      isDone = false;
+    }
     if (_selectedTransactionType == 'Collection' ||
         _selectedTransactionType == 'Payment') {
       final QuerySnapshot sourceAccountQuerySnapshot = await accounts
@@ -1733,7 +1817,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
           period: _period,
           duration: _selectedDuration,
           targetDate: _targetDate,
-          isDone: true,
+          isDone: isDone,
           createDate: DateTime.now(),
           updateDate: DateTime.now(),
           isActive: true);

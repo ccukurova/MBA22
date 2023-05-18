@@ -37,6 +37,7 @@ class _MainPage extends State<MainPage> {
     Query userAccountTransactions = transactions
         .where('ledgerID', isEqualTo: widget.currentLedgerID)
         .where('isActive', isEqualTo: true)
+        .where('duration', isEqualTo: 0)
         .where('transactionType',
             whereIn: ['Sell', 'Collection', 'Decrease', 'Income']);
 
@@ -64,6 +65,7 @@ class _MainPage extends State<MainPage> {
     Query userAccountTransactions = transactions
         .where('ledgerID', isEqualTo: widget.currentLedgerID)
         .where('isActive', isEqualTo: true)
+        .where('duration', isEqualTo: 0)
         .where('transactionType',
             whereIn: ['Buy', 'Payment', 'Increase', 'Outcome']);
 
@@ -404,20 +406,13 @@ class _MainPage extends State<MainPage> {
 
       if (snapshot != null && snapshot.docs.isNotEmpty) {
         snapshot.docs.forEach((DocumentSnapshot doc) {
-          DateTime targetDate = (doc['targetDate'] as Timestamp).toDate();
-          if (targetDate !=
-              Timestamp.fromDate(
-                  DateTime.fromMillisecondsSinceEpoch(0, isUtc: true))) {
-            int dateTimeCompare = targetDate.compareTo(DateTime.now());
+          DateTime targetDate = doc["targetDate"].toDate();
+          int dateTimeCompare = targetDate.compareTo(DateTime.now());
 
-            if (dateTimeCompare <= 0) {
-              doc.reference.update({
-                'isDone': true,
-                'targetDate': Timestamp.fromDate(
-                    DateTime.fromMillisecondsSinceEpoch(0, isUtc: true))
-              });
-
-              if (doc['duration'] > 0) CreateFutureTransaction(doc);
+          if (dateTimeCompare <= 0) {
+            doc.reference.update({'isDone': true});
+            if (doc["period"] != "For once") {
+              CreateFutureTransaction(doc);
             }
           }
         });
@@ -446,6 +441,8 @@ class _MainPage extends State<MainPage> {
     DateTime nextTargetDate =
         DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
     //   Period can be:
+    //   'Now'
+    //   'Past'
     //   'For once',
     //   'Every day'
     //   'Every week',
@@ -482,7 +479,7 @@ class _MainPage extends State<MainPage> {
           period: doc['period'],
           duration: doc['duration'] - 1,
           targetDate: nextTargetDate,
-          isDone: isDone,
+          isDone: doc['isDone'],
           createDate: doc['createDate'],
           updateDate: doc['updateDate'],
           isActive: true);
@@ -523,19 +520,10 @@ class _MainPage extends State<MainPage> {
         ),
       );
     }
-    Timestamp zeroDate =
-        Timestamp.fromDate(DateTime.fromMillisecondsSinceEpoch(0, isUtc: true));
     Query ledgerTransactions = transactions
         .where('ledgerID', isEqualTo: widget.currentLedgerID)
         .where('isActive', isEqualTo: true)
-        .where('period', whereIn: [
-          'For once',
-          'Every day',
-          'Every week',
-          'Every month',
-          'Every year'
-        ])
-        .where('targetDate', isNotEqualTo: zeroDate)
+        .where('isDone', isEqualTo: false)
         .orderBy('targetDate', descending: true);
     return Padding(
         padding: EdgeInsets.only(left: 50, top: 0, right: 50, bottom: 0),
