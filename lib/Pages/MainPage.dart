@@ -448,31 +448,35 @@ class _MainPage extends State<MainPage> {
     //   'Every week',
     //   'Every month',
     //   'Every year'
-    if ('period' == 'Every day') {
+    if (doc['period'] == 'Every day') {
       nextTargetDate = targetDate.add(Duration(days: 1));
-    } else if ('period' == 'Every week') {
+    } else if (doc['period'] == 'Every week') {
       nextTargetDate = targetDate.add(Duration(days: 7));
-    } else if ('period' == 'Every month') {
+    } else if (doc['period'] == 'Every month') {
       nextTargetDate = targetDate
           .add(Duration(days: _daysInMonth(targetDate.year, targetDate.month)));
-    } else if ('period' == 'Every year') {
+    } else if (doc['period'] == 'Every year') {
       nextTargetDate = targetDate.add(Duration(days: 365));
     }
     if (doc['duration'] - 1 <= 0) {
       isDone = true;
       nextTargetDate = DateTime(0);
     }
+    List<String> accountIDList = List<String>.from(doc['accountID']
+        .map((item) => item is String ? item : item.toString()));
+    List<String> currencyList = List<String>.from(doc['currencies']
+        .map((item) => item is String ? item : item.toString()));
 
     try {
       newTransaction = TransactionModel(
-          accountID: doc['accountID'],
+          accountID: accountIDList,
           ledgerID: doc['ledgerID'],
           stockID: doc['stockID'],
           transactionType: doc['transactionType'],
           amount: doc['amount'],
           total: doc['total'],
           convertedTotal: doc['convertedTotal'],
-          currencies: doc['currencies'],
+          currencies: currencyList,
           price: doc['price'],
           transactionDetail: doc['transactionDetail'],
           categoryName: doc['categoryName'],
@@ -480,8 +484,8 @@ class _MainPage extends State<MainPage> {
           duration: doc['duration'] - 1,
           targetDate: nextTargetDate,
           isDone: doc['isDone'],
-          createDate: doc['createDate'],
-          updateDate: doc['updateDate'],
+          createDate: doc['createDate'].toDate(),
+          updateDate: doc['updateDate'].toDate(),
           isActive: true);
 
       DocumentReference transactionsDoc = await transactions.add({
