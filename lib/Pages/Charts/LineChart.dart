@@ -44,6 +44,6 @@ class LineChartState extends State<LineChart> {
 
 class LineData {
   LineData(this.month, this.profit);
-  final String month;
-  final double profit;
+  String month;
+  double profit;
 }

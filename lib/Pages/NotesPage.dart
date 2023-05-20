@@ -303,7 +303,9 @@ class NotePageState extends State<NotePage> {
                                         decoration: BoxDecoration(
                                           borderRadius:
                                               BorderRadius.circular(8.0),
-                                          color: Colors.blue,
+                                          color: data['isDone'] == false
+                                              ? Colors.blue
+                                              : Colors.grey,
                                         ),
                                         child: Row(
                                           mainAxisAlignment:

@@ -37,7 +37,7 @@ class _MainPage extends State<MainPage> {
     Query userAccountTransactions = transactions
         .where('ledgerID', isEqualTo: widget.currentLedgerID)
         .where('isActive', isEqualTo: true)
-        .where('duration', isEqualTo: 0)
+        .where('isDone', isEqualTo: true)
         .where('transactionType',
             whereIn: ['Sell', 'Collection', 'Decrease', 'Income']);
 
@@ -65,7 +65,7 @@ class _MainPage extends State<MainPage> {
     Query userAccountTransactions = transactions
         .where('ledgerID', isEqualTo: widget.currentLedgerID)
         .where('isActive', isEqualTo: true)
-        .where('duration', isEqualTo: 0)
+        .where('isDone', isEqualTo: true)
         .where('transactionType',
             whereIn: ['Buy', 'Payment', 'Increase', 'Outcome']);
 
@@ -168,7 +168,42 @@ class _MainPage extends State<MainPage> {
                   }
                 },
               ),
-              BarChart(),
+              FutureBuilder<List<BarData>>(
+                future: getRevenueBarList(widget.currentLedgerID!),
+                builder: (BuildContext context,
+                    AsyncSnapshot<List<BarData>> revenueListSnapshot) {
+                  if (revenueListSnapshot.connectionState ==
+                      ConnectionState.done) {
+                    if (revenueListSnapshot.hasError) {
+                      print('Error: ${revenueListSnapshot.error}');
+                      return Text('Error: ${revenueListSnapshot.error}');
+                    } else {
+                      return FutureBuilder<List<BarData>>(
+                        future: getExpenseBarList(widget.currentLedgerID!),
+                        builder: (BuildContext context,
+                            AsyncSnapshot<List<BarData>> expenseListSnapshot) {
+                          if (expenseListSnapshot.connectionState ==
+                              ConnectionState.done) {
+                            if (expenseListSnapshot.hasError) {
+                              print('Error: ${expenseListSnapshot.error}');
+                              return Text(
+                                  'Error: ${expenseListSnapshot.error}');
+                            } else {
+                              return BarChart(
+                                  revenueData: revenueListSnapshot.data!,
+                                  expenseData: expenseListSnapshot.data!);
+                            }
+                          } else {
+                            return CircularProgressIndicator();
+                          }
+                        },
+                      );
+                    }
+                  } else {
+                    return CircularProgressIndicator();
+                  }
+                },
+              ),
               LatestExchangeRates()
             ].map((i) {
               return Builder(
@@ -351,6 +386,122 @@ class _MainPage extends State<MainPage> {
     return pieData;
   }
 
+  Future<List<BarData>> getRevenueBarList(String ledgerID) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    CollectionReference transactions = firestore.collection('transactions');
+    List<String> months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ];
+    int previousMonthOrder = DateTime.now().month - 1;
+    String previousMonth = months.elementAt(previousMonthOrder - 1);
+    List<String> selectedMonths = [];
+    List<int> selectedMonthsIndexes = [];
+    List<BarData> barList = [];
+    for (int monthCounter = 0; monthCounter < 6; monthCounter++) {
+      if (previousMonthOrder == 0) {
+        previousMonthOrder = 12;
+      }
+      BarData newBarData = BarData(months.elementAt(previousMonthOrder - 1), 0);
+      barList.add(newBarData);
+      selectedMonthsIndexes.add(previousMonthOrder - 1);
+      previousMonthOrder--;
+    }
+
+    QuerySnapshot ledgerTransactions = await transactions
+        .where('ledgerID', isEqualTo: ledgerID)
+        .where('isDone', isEqualTo: true)
+        .where('isActive', isEqualTo: true)
+        .get();
+
+    ledgerTransactions.docs.forEach((element) {
+      int transactionMonth = (element['targetDate'].toDate()).month;
+      if (selectedMonthsIndexes.contains(transactionMonth - 1)) {
+        if (element['transactionType'] == 'Sell' ||
+            element['transactionType'] == 'Collection' ||
+            element['transactionType'] == 'Income' ||
+            element['transactionType'] == 'Decrease') {
+          String monthName = months[transactionMonth - 1];
+          barList.forEach((BarDataElement) {
+            if (BarDataElement.month == monthName) {
+              BarDataElement.total += element['convertedTotal'];
+            }
+          });
+        }
+      }
+    });
+    barList = barList.reversed.toList();
+    return barList;
+  }
+
+  Future<List<BarData>> getExpenseBarList(String ledgerID) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    CollectionReference transactions = firestore.collection('transactions');
+    List<String> months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ];
+    int previousMonthOrder = DateTime.now().month - 1;
+    String previousMonth = months.elementAt(previousMonthOrder - 1);
+    List<String> selectedMonths = [];
+    List<int> selectedMonthsIndexes = [];
+    List<BarData> barList = [];
+    for (int monthCounter = 0; monthCounter < 6; monthCounter++) {
+      if (previousMonthOrder == 0) {
+        previousMonthOrder = 12;
+      }
+      BarData newBarData = BarData(months.elementAt(previousMonthOrder - 1), 0);
+      barList.add(newBarData);
+      selectedMonthsIndexes.add(previousMonthOrder - 1);
+      previousMonthOrder--;
+    }
+
+    QuerySnapshot ledgerTransactions = await transactions
+        .where('ledgerID', isEqualTo: ledgerID)
+        .where('isDone', isEqualTo: true)
+        .where('isActive', isEqualTo: true)
+        .get();
+
+    ledgerTransactions.docs.forEach((element) {
+      int transactionMonth = (element['targetDate'].toDate()).month;
+      if (selectedMonthsIndexes.contains(transactionMonth - 1)) {
+        if (element['transactionType'] == 'Buy' ||
+            element['transactionType'] == 'Payment' ||
+            element['transactionType'] == 'Outcome' ||
+            element['transactionType'] == 'Increase') {
+          String monthName = months[transactionMonth - 1];
+          barList.forEach((BarDataElement) {
+            if (BarDataElement.month == monthName) {
+              BarDataElement.total += element['convertedTotal'];
+            }
+          });
+        }
+      }
+    });
+    barList = barList.reversed.toList();
+    return barList;
+  }
+
   Future<List<LineData>> getLineList(String ledgerID) async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     CollectionReference transactions = firestore.collection('transactions');
@@ -371,26 +522,53 @@ class _MainPage extends State<MainPage> {
     int previousMonthOrder = DateTime.now().month - 1;
     String previousMonth = months.elementAt(previousMonthOrder - 1);
     List<String> selectedMonths = [];
+    List<int> selectedMonthsIndexes = [];
+    List<LineData> lineList = [];
     for (int monthCounter = 0; monthCounter < 6; monthCounter++) {
       if (previousMonthOrder == 0) {
         previousMonthOrder = 12;
       }
-      selectedMonths.add(months.elementAt(previousMonthOrder - 1));
+      LineData newLineData =
+          LineData(months.elementAt(previousMonthOrder - 1), 0);
+      lineList.add(newLineData);
+      selectedMonthsIndexes.add(previousMonthOrder - 1);
       previousMonthOrder--;
     }
-    selectedMonths = selectedMonths.reversed.toList();
-    Query userFutureTransactions = transactions
-        .where('ledgerID', isEqualTo: ledgerID)
-        .where('isActive', isEqualTo: true);
 
-    return <LineData>[
-      LineData('Jan', -100000),
-      LineData('Feb', -40000),
-      LineData('Mar', 34000),
-      LineData('Apr', 60000),
-      LineData('May', 100000),
-      LineData('Jun', 70000),
-    ];
+    QuerySnapshot ledgerTransactions = await transactions
+        .where('ledgerID', isEqualTo: ledgerID)
+        .where('isDone', isEqualTo: true)
+        .where('isActive', isEqualTo: true)
+        .get();
+
+    ledgerTransactions.docs.forEach((element) {
+      int transactionMonth = (element['targetDate'].toDate()).month;
+      if (selectedMonthsIndexes.contains(transactionMonth - 1)) {
+        if (element['transactionType'] == 'Buy' ||
+            element['transactionType'] == 'Payment' ||
+            element['transactionType'] == 'Outcome' ||
+            element['transactionType'] == 'Increase') {
+          String monthName = months[transactionMonth - 1];
+          lineList.forEach((LineDataElement) {
+            if (LineDataElement.month == monthName) {
+              LineDataElement.profit -= element['convertedTotal'];
+            }
+          });
+        } else if (element['transactionType'] == 'Sell' ||
+            element['transactionType'] == 'Collection' ||
+            element['transactionType'] == 'Income' ||
+            element['transactionType'] == 'Decrease') {
+          String monthName = months[transactionMonth - 1];
+          lineList.forEach((LineDataElement) {
+            if (LineDataElement.month == monthName) {
+              LineDataElement.profit += element['convertedTotal'];
+            }
+          });
+        }
+      }
+    });
+    lineList = lineList.reversed.toList();
+    return lineList;
   }
 
   Future<void> checkForFutureTransactions(String ledgerID) async {
@@ -458,10 +636,7 @@ class _MainPage extends State<MainPage> {
     } else if (doc['period'] == 'Every year') {
       nextTargetDate = targetDate.add(Duration(days: 365));
     }
-    if (doc['duration'] - 1 <= 0) {
-      isDone = true;
-      nextTargetDate = DateTime(0);
-    }
+
     List<String> accountIDList = List<String>.from(doc['accountID']
         .map((item) => item is String ? item : item.toString()));
     List<String> currencyList = List<String>.from(doc['currencies']
@@ -502,7 +677,7 @@ class _MainPage extends State<MainPage> {
         'categoryName': newTransaction.categoryName,
         'period': newTransaction.period,
         'duration': newTransaction.duration,
-        'targetDate': newTransaction.targetDate,
+        'targetDate': Timestamp.fromDate(newTransaction.targetDate),
         'isDone': newTransaction.isDone,
         'createDate': Timestamp.fromDate(newTransaction.createDate),
         'updateDate': Timestamp.fromDate(newTransaction.updateDate),

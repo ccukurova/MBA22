@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
 class BarChart extends StatefulWidget {
-  @override
+  final List<BarData> revenueData;
+  final List<BarData> expenseData;
+  const BarChart({required this.revenueData, required this.expenseData});
   BarChartState createState() => BarChartState();
 }
 
@@ -27,30 +29,18 @@ class BarChartState extends State<BarChart> {
           title: ChartTitle(text: 'Revenue-Expense'),
           legend: Legend(isVisible: true),
           series: <ChartSeries>[
-            ColumnSeries<SalesData, String>(
+            ColumnSeries<BarData, String>(
               name: 'Revenue',
-              dataSource: <SalesData>[
-                SalesData('Jan', 25000.53),
-                SalesData('Feb', 34567.32),
-                SalesData('Mar', 34567),
-                SalesData('Apr', 29780),
-                SalesData('May', 42657.45),
-              ],
-              xValueMapper: (SalesData sales, _) => sales.month,
-              yValueMapper: (SalesData sales, _) => sales.sales,
+              dataSource: widget.revenueData,
+              xValueMapper: (revenueData, _) => revenueData.month,
+              yValueMapper: (revenueData, _) => revenueData.total,
               yAxisName: 'Primary Axis',
             ),
-            ColumnSeries<SalesData, String>(
+            ColumnSeries<BarData, String>(
               name: 'Expense',
-              dataSource: <SalesData>[
-                SalesData('Jan', 42657.45),
-                SalesData('Feb', 29780),
-                SalesData('Mar', 45587.43),
-                SalesData('Apr', 23876.32),
-                SalesData('May', 15000),
-              ],
-              xValueMapper: (SalesData sales, _) => sales.month,
-              yValueMapper: (SalesData sales, _) => sales.sales,
+              dataSource: widget.expenseData,
+              xValueMapper: (expenseData, _) => expenseData.month,
+              yValueMapper: (expenseData, _) => expenseData.total,
               yAxisName: 'Secondary Axis',
             ),
           ],
@@ -58,9 +48,9 @@ class BarChartState extends State<BarChart> {
   }
 }
 
-class SalesData {
-  final String month;
-  final double sales;
+class BarData {
+  String month;
+  double total;
 
-  SalesData(this.month, this.sales);
+  BarData(this.month, this.total);
 }
