@@ -131,27 +131,29 @@ class _MainPage extends State<MainPage> {
               scrollDirection: Axis.horizontal,
             ),
             items: [
-              FutureBuilder<List<PieData>>(
-                future: getPieList(widget.currentLedgerID),
-                builder: (BuildContext context,
-                    AsyncSnapshot<List<PieData>> snapshot) {
-                  if (snapshot.connectionState == ConnectionState.done) {
-                    if (snapshot.hasError) {
-                      print('Error: ${snapshot.error}');
-                      return Text('Error: ${snapshot.error}');
-                    } else if (snapshot.data!.isEmpty) {
-                      PieData noData = PieData(
-                          "No data available.", 1, "No data available.");
-                      List<PieData> noDataList = [noData];
-                      return PieChart(pieData: noDataList);
+              Column(children: [
+                FutureBuilder<List<PieData>>(
+                  future: getPieList(widget.currentLedgerID),
+                  builder: (BuildContext context,
+                      AsyncSnapshot<List<PieData>> snapshot) {
+                    if (snapshot.connectionState == ConnectionState.done) {
+                      if (snapshot.hasError) {
+                        print('Error: ${snapshot.error}');
+                        return Text('Error: ${snapshot.error}');
+                      } else if (snapshot.data!.isEmpty) {
+                        PieData noData = PieData(
+                            "No data available.", 1, "No data available.");
+                        List<PieData> noDataList = [noData];
+                        return PieChart(pieData: noDataList);
+                      } else {
+                        return PieChart(pieData: snapshot.data!);
+                      }
                     } else {
-                      return PieChart(pieData: snapshot.data!);
+                      return CircularProgressIndicator();
                     }
-                  } else {
-                    return CircularProgressIndicator();
-                  }
-                },
-              ),
+                  },
+                ),
+              ]),
               FutureBuilder<List<LineData>>(
                 future: getLineList(widget.currentLedgerID!),
                 builder: (BuildContext context,
