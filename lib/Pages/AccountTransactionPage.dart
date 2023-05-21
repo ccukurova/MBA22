@@ -262,7 +262,10 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                           decoration: BoxDecoration(
                                             borderRadius:
                                                 BorderRadius.circular(8.0),
-                                            color: Colors.blue,
+                                            color: data['period'] != 'Past' &&
+                                                    data['isDone'] == true
+                                                ? Colors.blue
+                                                : Colors.grey,
                                           ),
                                           child: Row(
                                             mainAxisAlignment:
@@ -487,15 +490,15 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                     Text(
                                         '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
                                     SizedBox(height: 10),
-                                    if (data['period'] != 'Now' &&
-                                        data['period'] != 'Past')
+                                    if (data['period'] != 'Now')
                                       Container(
                                         width: 250,
                                         padding: EdgeInsets.all(5),
                                         decoration: BoxDecoration(
                                           borderRadius:
                                               BorderRadius.circular(8.0),
-                                          color: data['isDone'] == false
+                                          color: data['isDone'] == false &&
+                                                  data['period'] != 'Past'
                                               ? Colors.blue
                                               : Colors.grey,
                                         ),
@@ -739,7 +742,10 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                         decoration: BoxDecoration(
                                           borderRadius:
                                               BorderRadius.circular(8.0),
-                                          color: Colors.blue,
+                                          color: data['period'] != 'Past' &&
+                                                  data['isDone'] == true
+                                              ? Colors.blue
+                                              : Colors.grey,
                                         ),
                                         child: Row(
                                           mainAxisAlignment:

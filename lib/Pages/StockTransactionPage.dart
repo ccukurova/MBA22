@@ -233,7 +233,10 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                                           decoration: BoxDecoration(
                                             borderRadius:
                                                 BorderRadius.circular(8.0),
-                                            color: Colors.blue,
+                                            color: data['period'] != 'Past' &&
+                                                    data['isDone'] == true
+                                                ? Colors.blue
+                                                : Colors.grey,
                                           ),
                                           child: Row(
                                             mainAxisAlignment:
@@ -418,15 +421,15 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                                     Text(
                                         '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
                                     SizedBox(height: 10),
-                                    if (data['period'] != 'Now' &&
-                                        data['period'] != 'Past')
+                                    if (data['period'] != 'Now')
                                       Container(
                                         width: 250,
                                         padding: EdgeInsets.all(5),
                                         decoration: BoxDecoration(
                                           borderRadius:
                                               BorderRadius.circular(8.0),
-                                          color: data['isDone'] == false
+                                          color: data['period'] != 'Past' &&
+                                                  data['isDone'] == true
                                               ? Colors.blue
                                               : Colors.grey,
                                         ),

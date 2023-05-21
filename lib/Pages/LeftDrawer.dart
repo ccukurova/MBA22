@@ -1,3 +1,4 @@
+import 'package:MBA22/Pages/ArchivePage.dart';
 import 'package:MBA22/Pages/LoginPage.dart';
 import 'package:MBA22/Pages/NotesPage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -83,9 +84,10 @@ class _LeftDrawerState extends State<LeftDrawer> {
             },
           ),
           ListTile(
-            title: Text('Transactions'),
+            title: Text('Archive'),
             onTap: () {
-              // Do something when the user taps on this ListTile
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => ArchivePage()));
             },
           ),
           ListTile(
