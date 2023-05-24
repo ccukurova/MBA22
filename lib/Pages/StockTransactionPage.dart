@@ -512,7 +512,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
       FirebaseFirestore.instance.collection('transactions');
   final _formKey = GlobalKey<FormState>();
   String selectedDurationText = "∞";
-  int selectedDuration = 1;
+  int selectedDuration = -1;
   TextEditingController duration = TextEditingController();
 
   String period = 'Now';
@@ -529,6 +529,8 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
   String sourceAccountValidator = "";
   String externalAccountValidator = "";
   String selectedCategory = "Choose a category";
+  String selectedSourceAccount = 'Select an internal account';
+  String selectedExternalAccount = 'Select an external account';
 
   DateTime _selectedDate = DateTime.now(); // Default selected date
   TimeOfDay _selectedTime =
@@ -616,10 +618,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
       'Every month',
       'Every year'
     ];
-
-    TextEditingController sourceAccountController = TextEditingController();
-    TextEditingController externalAccountController = TextEditingController();
-
+    duration.text = '∞';
     return Stack(children: [
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1014,8 +1013,8 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                                 total,
                                 currencies,
                                 transactionDetail,
-                                sourceAccountController.text,
-                                externalAccountController.text,
+                                selectedSourceAccount,
+                                selectedExternalAccount,
                                 selectedDuration,
                                 targetDate,
                                 period);
@@ -1056,13 +1055,37 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                     FutureBuilder<List<String>>(
                       future: getInternalAccountNames(),
                       builder: (context, snapshot) {
-                        if (snapshot.hasData) {
-                          return TextFieldSearch(
-                              initialList: snapshot.data,
-                              label: 'Internal account(source)',
-                              controller: sourceAccountController);
-                        } else {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          // While the future is loading
                           return Center(child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          // If an error occurred
+                          return Text('Error: ${snapshot.error}');
+                        } else {
+                          // When the future completes successfully
+                          List<String> accountNames = snapshot.data!;
+                          accountNames.insert(0, 'Select an internal account');
+
+                          return DropdownButton<String>(
+                            value: selectedSourceAccount,
+                            elevation: 16,
+                            onChanged: (String? newValue) {
+                              if (newValue != null) {
+                                setState(() {
+                                  selectedSourceAccount = newValue;
+                                });
+                              }
+                            },
+                            items: accountNames
+                                .map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                            hint: Text('Internal account (source)'),
+                          );
                         }
                       },
                     ),
@@ -1079,13 +1102,37 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                     FutureBuilder<List<String>>(
                       future: getExternalAccountNames(),
                       builder: (context, snapshot) {
-                        if (snapshot.hasData) {
-                          return TextFieldSearch(
-                              initialList: snapshot.data,
-                              label: 'External account',
-                              controller: externalAccountController);
-                        } else {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          // While the future is loading
                           return Center(child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          // If an error occurred
+                          return Text('Error: ${snapshot.error}');
+                        } else {
+                          // When the future completes successfully
+                          List<String> accountNames = snapshot.data!;
+                          accountNames.insert(0, 'Select an external account');
+
+                          return DropdownButton<String>(
+                            value: selectedExternalAccount,
+                            elevation: 16,
+                            onChanged: (String? newValue) {
+                              if (newValue != null) {
+                                setState(() {
+                                  selectedExternalAccount = newValue;
+                                });
+                              }
+                            },
+                            items: accountNames
+                                .map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                            hint: Text('Internal account (source)'),
+                          );
                         }
                       },
                     ),
@@ -1376,10 +1423,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                         String baseCurrency;
                         DocumentSnapshot currentStock =
                             await accounts.doc().get();
-                        String selectedSourceAccount =
-                            sourceAccountController.text;
-                        String selectedExternalAccount =
-                            externalAccountController.text;
+
                         setState(() {
                           sourceAccountValidator = "";
                           externalAccountValidator = "";
@@ -1449,7 +1493,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
 
                               Query _selectedExternalAccountQuery = accounts
                                   .where('accountName',
-                                      isEqualTo: externalAccountController.text)
+                                      isEqualTo: selectedExternalAccount)
                                   .limit(1);
                               QuerySnapshot selectedExternalAccountSnapshot =
                                   await _selectedExternalAccountQuery.get();
@@ -1461,7 +1505,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
 
                               Query _selectedSourceAccountQuery = accounts
                                   .where('accountName',
-                                      isEqualTo: sourceAccountController.text)
+                                      isEqualTo: selectedExternalAccount)
                                   .limit(1);
                               QuerySnapshot selectedSourceAccountSnapshot =
                                   await _selectedSourceAccountQuery.get();
