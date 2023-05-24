@@ -59,7 +59,6 @@ class NotePageState extends State<NotePage> {
   Widget build(BuildContext context) {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     CollectionReference notes = firestore.collection('notes');
-
     if (currentLedgerID == null) {
       return Scaffold(
         body: Center(
@@ -409,8 +408,7 @@ class NoteAdderState extends State<NoteAdder> {
     final dateFormatter = DateFormat('dd/MM/yyyy');
     // Time formatter for displaying the selected time
     final timeFormatter = DateFormat('HH:mm');
-    duration.text = selectedDurationText;
-
+    duration.text = '∞';
     return Stack(children: [
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,

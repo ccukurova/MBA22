@@ -849,7 +849,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
 
   String selectedDurationText = "∞";
   int selectedDuration = -1;
-
+  String selectedSourceAccount = 'Select an internal account';
   @override
   void initState() {
     super.initState();
@@ -884,28 +884,28 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
     });
   }
 
-  Stream<List<String>> getInternalAccountNames() {
+  Future<List<String>> getInternalAccountNames() async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     CollectionReference accounts = firestore.collection('accounts');
-
-    return accounts
+    String? currentLedgerID = await prefs.getString("ledgerID");
+    QuerySnapshot querySnapshot = await accounts
         .where('ledgerID', isEqualTo: currentLedgerID)
         .where('isActive', isEqualTo: true)
         .where('accountType', isEqualTo: 'Internal')
         .orderBy('updateDate', descending: true)
-        .snapshots()
-        .map((QuerySnapshot querySnapshot) {
-      List<String> accountNames = [];
-      for (DocumentSnapshot documentSnapshot in querySnapshot.docs) {
-        Map<String, dynamic>? data =
-            documentSnapshot.data() as Map<String, dynamic>?;
-        if (data != null) {
-          String accountName = data['accountName'];
-          accountNames.add(accountName);
-        }
+        .get();
+
+    List<String> accountNames = [];
+    for (DocumentSnapshot documentSnapshot in querySnapshot.docs) {
+      Map<String, dynamic>? data =
+          documentSnapshot.data() as Map<String, dynamic>?;
+      if (data != null) {
+        String accountName = data['accountName'];
+        accountNames.add(accountName);
       }
-      return accountNames;
-    });
+    }
+
+    return accountNames;
   }
 
   @override
@@ -927,7 +927,6 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
     ];
     duration.text = '∞';
 
-    TextEditingController sourceAccountController = TextEditingController();
     return Stack(children: [
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1202,7 +1201,6 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                                 setState(() {
                                   dropDownValuePeriod = value!;
                                   period = value;
-                                  print(value + dropDownValuePeriod + period);
                                 });
                               },
                               items: periodList.map<DropdownMenuItem<String>>(
@@ -1420,18 +1418,40 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                         ),
                       ),
                     ),
-                    StreamBuilder<List<String>>(
-                      stream: getInternalAccountNames(),
+                    FutureBuilder<List<String>>(
+                      future: getInternalAccountNames(),
                       builder: (context, snapshot) {
-                        if (snapshot.hasData) {
-                          return TextFieldSearch(
-                              initialList: snapshot.data,
-                              label: 'Internal account (source)',
-                              controller: sourceAccountController);
-                        } else if (snapshot.hasError) {
-                          return Text('Error6: ${snapshot.error}');
-                        } else {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          // While the future is loading
                           return Center(child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          // If an error occurred
+                          return Text('Error: ${snapshot.error}');
+                        } else {
+                          // When the future completes successfully
+                          List<String> accountNames = snapshot.data!;
+                          accountNames.insert(0, 'Select an internal account');
+
+                          return DropdownButton<String>(
+                            value: selectedSourceAccount,
+                            elevation: 16,
+                            onChanged: (String? newValue) {
+                              if (newValue != null) {
+                                setState(() {
+                                  selectedSourceAccount = newValue;
+                                });
+                              }
+                            },
+                            items: accountNames
+                                .map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                            hint: Text('Internal account (source)'),
+                          );
                         }
                       },
                     ),
@@ -1695,8 +1715,8 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                               sourceAccountValidator = '';
                             });
 
-                            if (sourceAccountController.text == null ||
-                                sourceAccountController.text == '') {
+                            if (selectedSourceAccount == null ||
+                                selectedSourceAccount == '') {
                               setState(() {
                                 sourceAccountValidator =
                                     'Please enter a valid internal (source) account.';
@@ -1714,7 +1734,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                                 baseCurrency = currentAccount['unit'];
                                 Query _selectedSourceAccountQuery = accounts
                                     .where('accountName',
-                                        isEqualTo: sourceAccountController.text)
+                                        isEqualTo: selectedSourceAccount)
                                     .limit(1);
                                 QuerySnapshot selectedSourceAccountSnapshot =
                                     await _selectedSourceAccountQuery.get();
@@ -1737,7 +1757,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                                   convertedTotal,
                                   currencies,
                                   transactionDetail,
-                                  sourceAccountController.text,
+                                  selectedSourceAccount,
                                   targetDate,
                                   selectedDuration,
                                   period,

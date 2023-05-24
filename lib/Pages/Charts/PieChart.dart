@@ -21,18 +21,16 @@ class PieChartState extends State<PieChart> {
     return Container(
       width: 500,
       height: 500,
-      child: SfCircularChart(
-          title: ChartTitle(text: 'Categories'),
-          series: <PieSeries<PieData, String>>[
-            PieSeries<PieData, String>(
-                explode: true,
-                explodeIndex: 0,
-                dataSource: widget.pieData,
-                xValueMapper: (PieData data, _) => data.xData,
-                yValueMapper: (PieData data, _) => data.yData,
-                dataLabelMapper: (PieData data, _) => data.text,
-                dataLabelSettings: DataLabelSettings(isVisible: true)),
-          ]),
+      child: SfCircularChart(series: <PieSeries<PieData, String>>[
+        PieSeries<PieData, String>(
+            explode: true,
+            explodeIndex: 0,
+            dataSource: widget.pieData,
+            xValueMapper: (PieData data, _) => data.xData,
+            yValueMapper: (PieData data, _) => data.yData,
+            dataLabelMapper: (PieData data, _) => data.text,
+            dataLabelSettings: DataLabelSettings(isVisible: true)),
+      ]),
     );
   }
 }

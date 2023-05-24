@@ -28,13 +28,14 @@ class LineChartState extends State<LineChart> {
             // Initialize category axis
             title: ChartTitle(text: 'Profit'),
             // Enable legend
-            legend: Legend(isVisible: true),
+            legend: Legend(isVisible: false),
             // Enable tooltip
             tooltipBehavior: TooltipBehavior(enable: true),
             primaryXAxis: CategoryAxis(),
             series: <LineSeries<LineData, String>>[
               LineSeries<LineData, String>(
                   // Bind data source
+                  name: "Net",
                   dataSource: widget.lineData,
                   xValueMapper: (LineData data, _) => data.month,
                   yValueMapper: (LineData data, _) => data.profit),

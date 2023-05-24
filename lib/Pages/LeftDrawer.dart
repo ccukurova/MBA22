@@ -77,7 +77,7 @@ class _LeftDrawerState extends State<LeftDrawer> {
             },
           ),
           ListTile(
-            title: Text('Notes'),
+            title: Text('Notes & To-do'),
             onTap: () {
               Navigator.push(
                   context, MaterialPageRoute(builder: (context) => NotePage()));

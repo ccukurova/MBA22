@@ -131,7 +131,7 @@ class _LedgerPage extends State<LedgerPage> {
                                                       children: <Widget>[
                                                         ListTile(
                                                           leading:
-                                                              Icon(Icons.edit),
+                                                              Icon(Icons.share),
                                                           title: Text('Share'),
                                                           onTap: () {
                                                             // do something

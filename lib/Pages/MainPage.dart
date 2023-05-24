@@ -28,6 +28,7 @@ class _MainPage extends State<MainPage> {
   CarouselController buttonCarouselController = CarouselController();
   double sumOfRevenue = 0.0;
   double sumOfExpense = 0.0;
+  bool showRevenue = true;
 
   TooltipBehavior _tooltipBehavior = TooltipBehavior(enable: true);
 
@@ -116,10 +117,11 @@ class _MainPage extends State<MainPage> {
       body: SingleChildScrollView(
         scrollDirection: Axis.vertical,
         child: Column(children: [
+          SizedBox(height: 20),
           CarouselSlider(
             carouselController: buttonCarouselController,
             options: CarouselOptions(
-              height: 400,
+              height: 600,
               aspectRatio: 16 / 9,
               viewportFraction: 0.8,
               initialPage: 0,
@@ -132,6 +134,42 @@ class _MainPage extends State<MainPage> {
             ),
             items: [
               Column(children: [
+                Text(
+                  "Categories",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          showRevenue = true; // "Revenue" seçeneğini göster
+                        });
+                      },
+                      child: Text(
+                        'Revenue',
+                        style: TextStyle(
+                          color: showRevenue ? Colors.blue : Colors.black,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          showRevenue = false; // "Expense" seçeneğini göster
+                        });
+                      },
+                      child: Text(
+                        'Expense',
+                        style: TextStyle(
+                          color: showRevenue ? Colors.black : Colors.blue,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 FutureBuilder<List<PieData>>(
                   future: getPieList(widget.currentLedgerID),
                   builder: (BuildContext context,
@@ -206,7 +244,7 @@ class _MainPage extends State<MainPage> {
                   }
                 },
               ),
-              LatestExchangeRates()
+              ExchangeRatesWidget()
             ].map((i) {
               return Builder(
                 builder: (BuildContext context) {
@@ -355,34 +393,61 @@ class _MainPage extends State<MainPage> {
     CollectionReference transactions = firestore.collection('transactions');
     List<PieData> pieData = [];
     Map<String, double> categoryList = {};
-
     Query userTransactions = transactions
         .where('ledgerID', isEqualTo: ledgerID)
-        .where('isActive', isEqualTo: true);
+        .where('isActive', isEqualTo: true)
+        .where('isDone', isEqualTo: true);
 
-    try {
-      QuerySnapshot snapshot = await userTransactions.get();
-      snapshot.docs.forEach((DocumentSnapshot doc) {
-        if ((doc['transactionType'] == 'Buy' ||
-                doc['transactionType'] == 'Payment' ||
-                doc['transactionType'] == 'Outcome' ||
-                doc['transactionType'] == 'Increase') &&
-            doc['categoryName'] != '') {
-          String categoryName = doc['categoryName'];
-          double total = doc['total'];
-          categoryList[categoryName] =
-              (categoryList[categoryName] ?? 0) + total;
-        }
-      });
+    if (showRevenue == false) {
+      try {
+        QuerySnapshot snapshot = await userTransactions.get();
+        snapshot.docs.forEach((DocumentSnapshot doc) {
+          if ((doc['transactionType'] == 'Buy' ||
+                  doc['transactionType'] == 'Payment' ||
+                  doc['transactionType'] == 'Outcome' ||
+                  doc['transactionType'] == 'Increase') &&
+              doc['categoryName'] != '') {
+            String categoryName = doc['categoryName'];
+            double total = doc['total'];
+            categoryList[categoryName] =
+                (categoryList[categoryName] ?? 0) + total;
+          }
+        });
 
-      categoryList.forEach((categoryName, total) {
-        PieData newData = PieData(categoryName, total, categoryName);
-        pieData.add(newData);
-      });
+        categoryList.forEach((categoryName, total) {
+          PieData newData = PieData(categoryName, total, categoryName);
+          pieData.add(newData);
+        });
 
-      return pieData;
-    } catch (error) {
-      print('Error getting transactions: $error');
+        return pieData;
+      } catch (error) {
+        print('Error getting transactions: $error');
+      }
+    } else if (showRevenue == true) {
+      try {
+        QuerySnapshot snapshot = await userTransactions.get();
+        snapshot.docs.forEach((DocumentSnapshot doc) {
+          if ((doc['transactionType'] == 'Sell' ||
+                  doc['transactionType'] == 'Collection' ||
+                  doc['transactionType'] == 'Income' ||
+                  doc['transactionType'] == 'Decrease') &&
+              doc['categoryName'] != '') {
+            String categoryName = doc['categoryName'];
+            double total = doc['total'];
+            categoryList[categoryName] =
+                (categoryList[categoryName] ?? 0) + total;
+          }
+        });
+
+        categoryList.forEach((categoryName, total) {
+          PieData newData = PieData(categoryName, total, categoryName);
+          pieData.add(newData);
+        });
+
+        return pieData;
+      } catch (error) {
+        print('Error getting transactions: $error');
+      }
     }
 
     return pieData;
@@ -1477,35 +1542,90 @@ class _MainPage extends State<MainPage> {
   }
 }
 
-Widget LatestExchangeRates() {
-  ExchangerateRequester requester = new ExchangerateRequester();
-  return Container(
-      width: 500,
-      height: 500,
-      child: FutureBuilder<Map<String, dynamic>>(
-        future: requester.requestAll('TRY'),
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            return ListView.builder(
-              itemCount: snapshot.data!.length,
-              itemBuilder: (context, index) {
-                final currency = snapshot.data!.keys.elementAt(index);
-                final rate = snapshot.data![currency];
-                return ListTile(
-                  title: Text(currency),
-                  trailing: Text(rate.toString()),
-                );
+class ExchangeRatesWidget extends StatefulWidget {
+  @override
+  _ExchangeRatesWidgetState createState() => _ExchangeRatesWidgetState();
+}
+
+class _ExchangeRatesWidgetState extends State<ExchangeRatesWidget> {
+  ExchangerateRequester requester = ExchangerateRequester();
+  String unit = 'TRY';
+  String dropDownValueUnit = 'TRY';
+
+  @override
+  Widget build(BuildContext context) {
+    final Map<String, String> descriptions = requester.getDescriptions();
+    final List<String> unitList = descriptions.keys.toList();
+    return Column(
+      children: [
+        Text(
+          "Exchange Rates",
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 16.0),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Base currency'),
+            SizedBox(width: 20),
+            DropdownButton<String>(
+              value: dropDownValueUnit,
+              icon: const Icon(Icons.arrow_downward),
+              elevation: 16,
+              style: const TextStyle(color: Colors.deepPurple),
+              underline: Container(
+                height: 2,
+                color: Colors.deepPurpleAccent,
+              ),
+              onChanged: (String? value) {
+                setState(() {
+                  dropDownValueUnit = value!;
+                  unit = value;
+                });
               },
-            );
-          } else if (snapshot.hasError) {
-            return Center(
-              child: Text('Error: ${snapshot.error}'),
-            );
-          } else {
-            return Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-        },
-      ));
+              items: unitList.map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+            )
+          ],
+        ),
+        SizedBox(height: 16.0),
+        Container(
+          width: 500,
+          height: 450,
+          child: FutureBuilder<Map<String, dynamic>>(
+            future: requester.requestAll(unit),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return ListView.builder(
+                  itemCount: snapshot.data!.length,
+                  itemBuilder: (context, index) {
+                    final currency = snapshot.data!.keys.elementAt(index);
+                    final rate = snapshot.data![currency];
+                    return ListTile(
+                      title: Text(currency),
+                      subtitle: Text(requester.getDescriptionsByCode(currency)),
+                      trailing: Text(rate.toString()),
+                    );
+                  },
+                );
+              } else if (snapshot.hasError) {
+                return Center(
+                  child: Text('Error: ${snapshot.error}'),
+                );
+              } else {
+                return Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
+            },
+          ),
+        ),
+      ],
+    );
+  }
 }
