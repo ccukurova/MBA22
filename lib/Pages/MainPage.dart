@@ -121,9 +121,9 @@ class _MainPage extends State<MainPage> {
           CarouselSlider(
             carouselController: buttonCarouselController,
             options: CarouselOptions(
-              height: 600,
+              height: MediaQuery.of(context).size.height/10 * 7,
               aspectRatio: 16 / 9,
-              viewportFraction: 0.8,
+              viewportFraction: 1,
               initialPage: 0,
               enableInfiniteScroll: true,
               reverse: false,
@@ -133,7 +133,9 @@ class _MainPage extends State<MainPage> {
               scrollDirection: Axis.horizontal,
             ),
             items: [
-              Column(children: [
+              Column(
+                mainAxisSize: MainAxisSize.max,
+                children: [
                 Text(
                   "Categories",
                   textAlign: TextAlign.center,

@@ -1120,6 +1120,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                 child: Column(
                   children: [
                     TextFormField(
+                      keyboardType: TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
                         labelText: 'Amount',
                         border: OutlineInputBorder(),
