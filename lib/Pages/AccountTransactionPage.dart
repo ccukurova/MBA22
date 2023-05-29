@@ -35,27 +35,15 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
     });
   }
 
-  void showAccountTransactionAdderDialog(BuildContext context) async {
+  void showAccountTransactionAdderDialog(BuildContext context,
+      {DocumentSnapshot<Object?>? document}) async {
     await showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          content: AccountTransactionAdder(),
-        );
+            content: AccountTransactionAdder(document: document));
       },
     );
-  }
-
-  void showAccountTransactionUpdaterDialog(
-      BuildContext context, DocumentSnapshot<Object?> document) async {
-    // await showDialog(
-    //   context: context,
-    //   builder: (BuildContext context) {
-    //     return AlertDialog(
-    //       content: StockTransactionUpdater(document),
-    //     );
-    //   },
-    // );
   }
 
   Future<DocumentSnapshot> getCurrentAccount() async {
@@ -205,9 +193,10 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                               // do something
                                                               Navigator.pop(
                                                                   context);
-                                                              showAccountTransactionUpdaterDialog(
+                                                              showAccountTransactionAdderDialog(
                                                                   context,
-                                                                  document);
+                                                                  document:
+                                                                      document);
                                                             },
                                                           ),
                                                           ListTile(
@@ -407,9 +396,10 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                             // do something
                                                             Navigator.pop(
                                                                 context);
-                                                            showAccountTransactionUpdaterDialog(
+                                                            showAccountTransactionAdderDialog(
                                                                 context,
-                                                                document);
+                                                                document:
+                                                                    document);
                                                           },
                                                         ),
                                                         ListTile(
@@ -816,7 +806,8 @@ Future<String> getAccountNameByID(String _accountID) async {
 }
 
 class AccountTransactionAdder extends StatefulWidget {
-  const AccountTransactionAdder({super.key});
+  final DocumentSnapshot<Object?>? document;
+  const AccountTransactionAdder({Key? key, this.document}) : super(key: key);
   @override
   AccountTransactionAdderState createState() => AccountTransactionAdderState();
 }
@@ -825,7 +816,8 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
   CollectionReference transactions =
       FirebaseFirestore.instance.collection('transactions');
   final _formKey = GlobalKey<FormState>();
-
+  TextEditingController amountTextController = new TextEditingController();
+  TextEditingController detailsTextController = new TextEditingController();
   String period = 'Now';
   String transactionDetail = '';
   double total = 0.0;
@@ -888,6 +880,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     CollectionReference accounts = firestore.collection('accounts');
     String? currentLedgerID = await prefs.getString("ledgerID");
+
     QuerySnapshot querySnapshot = await accounts
         .where('ledgerID', isEqualTo: currentLedgerID)
         .where('isActive', isEqualTo: true)
@@ -926,6 +919,10 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
       'Every year'
     ];
     duration.text = '∞';
+
+    if (widget.document != null && widget.document!.exists) {
+      setFieldValuesToUpdate();
+    }
 
     return Stack(children: [
       Row(
@@ -1120,7 +1117,9 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                 child: Column(
                   children: [
                     TextFormField(
-                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      controller: amountTextController,
+                      keyboardType:
+                          TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
                         labelText: 'Amount',
                         border: OutlineInputBorder(),
@@ -1147,6 +1146,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                     ),
                     SizedBox(height: 16.0),
                     TextFormField(
+                      controller: detailsTextController,
                       decoration: InputDecoration(
                         labelText: 'Details',
                         border: OutlineInputBorder(),
@@ -1458,7 +1458,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                     ),
                     SizedBox(height: 25.0),
                     TextFormField(
-                        initialValue: '0',
+                        controller: amountTextController,
                         decoration: InputDecoration(
                           labelText: 'Amount',
                           border: OutlineInputBorder(),
@@ -1484,6 +1484,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                         }),
                     SizedBox(height: 25.0),
                     TextFormField(
+                      controller: detailsTextController,
                       decoration: InputDecoration(
                         labelText: 'Details',
                         border: OutlineInputBorder(),
@@ -1785,6 +1786,39 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
     ]);
   }
 
+  Future<void> setFieldValuesToUpdate() async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    CollectionReference accounts = firestore.collection('accounts');
+
+    DocumentSnapshot<Map<String, dynamic>>? document =
+        widget.document as DocumentSnapshot<Map<String, dynamic>>;
+
+    selectedTransactionType = document['transactionType'];
+
+    // await accounts
+    //     .doc(document['accountID'][1])
+    //     .get()
+    //     .then((value) => selectedSourceAccount = value['accountName']);
+
+    amountTextController.text = document['total'].toString();
+    detailsTextController.text = document['transactionDetail'];
+    updateSelectedCategory(document['categoryName']);
+    period = document['period'];
+    DateTime targetDate = document['targetDate'].toDate();
+    _selectedDate = targetDate;
+    _selectedTime = TimeOfDay(hour: targetDate.hour, minute: targetDate.minute);
+    dropDownValuePeriod = period;
+    if (document['duration'] > 1) {
+      selectedDurationText = document['duration'].toString();
+      duration.text = selectedDurationText;
+      selectedDuration = document['duration'];
+    } else if (document['duration'] <= -1) {
+      selectedDurationText = '∞';
+      duration.text = selectedDurationText;
+      selectedDuration = document['duration'];
+    }
+  }
+
   Future<void> createAccountTransaction(
       String _selectedTransactionType,
       double total,
@@ -1875,10 +1909,6 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
     } catch (e) {
       print('Error caught: $e');
     }
-  }
-
-  Future<String> getChoosenCategory() async {
-    return await prefs.getString("choosenCategory") ?? "Choose a category";
   }
 
   void updateSelectedCategory(String _selectedCategory) {
