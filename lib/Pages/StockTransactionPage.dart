@@ -13,6 +13,8 @@ import 'MainPage.dart';
 import 'package:intl/intl.dart';
 import 'package:textfield_search/textfield_search.dart';
 
+import 'Widgets/TargetDateBar.dart';
+
 class StockTransactionPage extends StatefulWidget {
   @override
   StockTransactionPageState createState() => StockTransactionPageState();
@@ -227,35 +229,12 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                                           '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
                                       SizedBox(height: 10),
                                       if (data['period'] != 'Now')
-                                        Container(
-                                          width: 250,
-                                          padding: EdgeInsets.all(5),
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(8.0),
-                                            color: data['period'] != 'Past' &&
-                                                    data['isDone'] == true
-                                                ? Colors.blue
-                                                : Colors.grey,
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons.access_time,
-                                                size: 16.0,
-                                                color: Colors.white,
-                                              ),
-                                              SizedBox(width: 4.0),
-                                              Text(
-                                                '${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())} / ${data['period']}',
-                                                style: TextStyle(
-                                                    color: Colors.white),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
+                                        TargetDateBar(
+                                            targetDate:
+                                                data['targetDate'].toDate(),
+                                            period: data['period'],
+                                            duration: data['duration'],
+                                            isDone: data['isDone']),
                                       SizedBox(height: 10)
                                     ],
                                   ),
@@ -422,34 +401,20 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                                         '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
                                     SizedBox(height: 10),
                                     if (data['period'] != 'Now')
-                                      Container(
-                                        width: 250,
-                                        padding: EdgeInsets.all(5),
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(8.0),
-                                          color: data['period'] != 'Past' &&
-                                                  data['isDone'] == true
-                                              ? Colors.blue
-                                              : Colors.grey,
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.access_time,
-                                              size: 16.0,
-                                              color: Colors.white,
-                                            ),
-                                            SizedBox(width: 4.0),
-                                            Text(
-                                              '${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())} / ${data['period']}',
-                                              style: TextStyle(
-                                                  color: Colors.white),
-                                            ),
-                                          ],
-                                        ),
+                                      Column(
+                                        children: [
+                                          Text(
+                                              '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
+                                          SizedBox(height: 10),
+                                          if (data['period'] != 'Now')
+                                            TargetDateBar(
+                                                targetDate:
+                                                    data['targetDate'].toDate(),
+                                                period: data['period'],
+                                                duration: data['duration'],
+                                                isDone: data['isDone']),
+                                          SizedBox(height: 10)
+                                        ],
                                       ),
                                     SizedBox(height: 10)
                                   ]),
@@ -795,31 +760,10 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                     SizedBox(height: 16.0),
                     Column(
                       children: [
-                        GestureDetector(
-                          onTap: () {
-                            print('Tabbed to category.');
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => CategoriesPage(
-                                        onUpdate: updateSelectedCategory)));
-                          },
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.tag,
-                                size: 30.0,
-                                color: Colors.blue,
-                              ),
-                              Text(selectedCategory)
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 20),
                         Row(
                           children: [
                             Icon(
-                              Icons.access_time,
+                              Icons.calendar_month,
                               size: 30.0,
                               color: Colors.blue,
                             ),
@@ -833,17 +777,30 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                                 setState(() {
                                   dropDownValuePeriod = value!;
                                   period = value;
-                                  print(value + dropDownValuePeriod + period);
                                 });
                               },
                               items: periodList.map<DropdownMenuItem<String>>(
                                   (String value) {
                                 return DropdownMenuItem<String>(
                                   value: value,
-                                  child: Text(value),
+                                  child: Text(
+                                    value,
+                                    style: TextStyle(color: Colors.black),
+                                  ),
                                 );
                               }).toList(),
                             ),
+                          ],
+                        ),
+                        SizedBox(height: 10),
+                        Row(
+                          children: [
+                            if (period != 'Now')
+                              Icon(
+                                Icons.access_time,
+                                size: 30.0,
+                                color: Colors.blue,
+                              ),
                             if (period != 'Now' && period != 'Past')
                               GestureDetector(
                                 child: Text(
@@ -890,7 +847,8 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                               GestureDetector(
                                 child: Text(
                                   '  ${timeFormatter.format(DateTime(0, 0, 0, _selectedTime.hour, _selectedTime.minute))}',
-                                  style: TextStyle(fontSize: 16),
+                                  style: TextStyle(
+                                      fontSize: 16, color: Colors.black),
                                 ),
                                 onTap: () async {
                                   final TimeOfDay? selected =
@@ -905,14 +863,18 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                               ),
                           ],
                         ),
-                        SizedBox(height: 20),
+                        SizedBox(height: 10),
                         if (period != 'Now' &&
                             period != 'For once' &&
                             period != 'Past')
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text('Duration'),
+                              Icon(
+                                Icons.refresh,
+                                size: 30.0,
+                                color: Colors.blue,
+                              ),
+                              Text('Repeat'),
                               TextButton(
                                 onPressed: () => {
                                   if (selectedDuration == 2)
@@ -1275,11 +1237,11 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                             ],
                           ),
                         ),
-                        SizedBox(height: 20),
+                        SizedBox(height: 10),
                         Row(
                           children: [
                             Icon(
-                              Icons.access_time,
+                              Icons.calendar_month,
                               size: 30.0,
                               color: Colors.blue,
                             ),
@@ -1293,17 +1255,30 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                                 setState(() {
                                   dropDownValuePeriod = value!;
                                   period = value;
-                                  print(value + dropDownValuePeriod + period);
                                 });
                               },
                               items: periodList.map<DropdownMenuItem<String>>(
                                   (String value) {
                                 return DropdownMenuItem<String>(
                                   value: value,
-                                  child: Text(value),
+                                  child: Text(
+                                    value,
+                                    style: TextStyle(color: Colors.black),
+                                  ),
                                 );
                               }).toList(),
                             ),
+                          ],
+                        ),
+                        SizedBox(height: 10),
+                        Row(
+                          children: [
+                            if (period != 'Now')
+                              Icon(
+                                Icons.access_time,
+                                size: 30.0,
+                                color: Colors.blue,
+                              ),
                             if (period != 'Now' && period != 'Past')
                               GestureDetector(
                                 child: Text(
@@ -1350,7 +1325,8 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                               GestureDetector(
                                 child: Text(
                                   '  ${timeFormatter.format(DateTime(0, 0, 0, _selectedTime.hour, _selectedTime.minute))}',
-                                  style: TextStyle(fontSize: 16),
+                                  style: TextStyle(
+                                      fontSize: 16, color: Colors.black),
                                 ),
                                 onTap: () async {
                                   final TimeOfDay? selected =
@@ -1365,14 +1341,18 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                               ),
                           ],
                         ),
-                        SizedBox(height: 20),
+                        SizedBox(height: 10),
                         if (period != 'Now' &&
                             period != 'For once' &&
                             period != 'Past')
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text('Duration'),
+                              Icon(
+                                Icons.refresh,
+                                size: 30.0,
+                                color: Colors.blue,
+                              ),
+                              Text('Repeat'),
                               TextButton(
                                 onPressed: () => {
                                   if (selectedDuration == 2)
@@ -1488,8 +1468,8 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                                     'Please enter a valid internal (source) account.';
                               });
                             } else {
-                              late String baseCurrency;
-                              late String targetCurrency;
+                              late String baseCurrency = '';
+                              late String targetCurrency = '';
 
                               Query _selectedExternalAccountQuery = accounts
                                   .where('accountName',

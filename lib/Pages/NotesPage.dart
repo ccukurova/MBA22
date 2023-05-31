@@ -10,6 +10,8 @@ import '../Models/StockModel.dart';
 import 'MainPage.dart';
 import 'package:intl/intl.dart';
 
+import 'Widgets/TargetDateBar.dart';
+
 class NotePage extends StatefulWidget {
   @override
   NotePageState createState() => NotePageState();
@@ -295,35 +297,12 @@ class NotePageState extends State<NotePage> {
                                                   .toLocal())),
                                       ]),
                                       SizedBox(height: 25),
-                                      SizedBox(height: 10),
-                                      Container(
-                                        width: 250,
-                                        padding: EdgeInsets.all(5),
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(8.0),
-                                          color: data['isDone'] == false
-                                              ? Colors.blue
-                                              : Colors.grey,
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.access_time,
-                                              size: 16.0,
-                                              color: Colors.white,
-                                            ),
-                                            SizedBox(width: 4.0),
-                                            Text(
-                                              '${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())} / ${data['period']}',
-                                              style: TextStyle(
-                                                  color: Colors.white),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
+                                      TargetDateBar(
+                                          targetDate:
+                                              data['targetDate'].toDate(),
+                                          period: data['period'],
+                                          duration: data['duration'],
+                                          isDone: data['isDone']),
                                       SizedBox(height: 10)
                                     ])),
                               );
@@ -520,14 +499,14 @@ class NoteAdderState extends State<NoteAdder> {
                       noteDetail = value!;
                     },
                   ),
-                  SizedBox(height: 16.0),
+                  SizedBox(height: 20.0),
                   if (selectedNoteType == 'To do')
                     Column(
                       children: [
                         Row(
                           children: [
                             Icon(
-                              Icons.access_time,
+                              Icons.calendar_month,
                               size: 30.0,
                               color: Colors.blue,
                             ),
@@ -548,35 +527,91 @@ class NoteAdderState extends State<NoteAdder> {
                                   (String value) {
                                 return DropdownMenuItem<String>(
                                   value: value,
-                                  child: Text(value),
+                                  child: Text(
+                                    value,
+                                    style: TextStyle(color: Colors.black),
+                                  ),
                                 );
                               }).toList(),
                             ),
-                            GestureDetector(
-                              child: Text(
-                                  ' ${dateFormatter.format(_selectedDate)}', // Display selected date
-                                  style: TextStyle(fontSize: 16)),
-                              onTap: () async {
-                                final DateTime? selected = await showDatePicker(
-                                  context: context,
-                                  initialDate: _selectedDate,
-                                  firstDate: DateTime.now(),
-                                  lastDate:
-                                      DateTime.now().add(Duration(days: 365)),
-                                );
-                                if (selected != null) {
-                                  _onDateSelected(selected);
-                                }
-                              },
-                            ),
                           ],
                         ),
-                        SizedBox(height: 20),
+                        SizedBox(height: 10),
+                        Row(children: [
+                          Icon(
+                            Icons.access_time,
+                            size: 30.0,
+                            color: Colors.blue,
+                          ),
+                          GestureDetector(
+                            child: Text(
+                                ' ${dateFormatter.format(_selectedDate)}', // Display selected date
+                                style: TextStyle(fontSize: 16)),
+                            onTap: () async {
+                              final DateTime? selected = await showDatePicker(
+                                context: context,
+                                initialDate: _selectedDate,
+                                firstDate: DateTime.now(),
+                                lastDate:
+                                    DateTime.now().add(Duration(days: 365)),
+                              );
+                              if (selected != null) {
+                                _onDateSelected(selected);
+                              }
+                            },
+                          ),
+                          if (period == 'Past')
+                            Builder(
+                              builder: (BuildContext context) {
+                                return GestureDetector(
+                                  child: Text(
+                                    ' ${dateFormatter.format(_selectedDate)}',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                  onTap: () async {
+                                    final DateTime? selected =
+                                        await showDatePicker(
+                                      context: context,
+                                      initialDate: _selectedDate,
+                                      firstDate: DateTime(1900),
+                                      lastDate: DateTime.now(),
+                                    );
+                                    if (selected != null) {
+                                      _onDateSelected(selected);
+                                    }
+                                  },
+                                );
+                              },
+                            ),
+                          if (period != 'Past')
+                            GestureDetector(
+                              child: Text(
+                                '  ${timeFormatter.format(DateTime(0, 0, 0, _selectedTime.hour, _selectedTime.minute))}',
+                                style: TextStyle(
+                                    fontSize: 16, color: Colors.black),
+                              ),
+                              onTap: () async {
+                                final TimeOfDay? selected =
+                                    await showTimePicker(
+                                  context: context,
+                                  initialTime: _selectedTime,
+                                );
+                                if (selected != null) {
+                                  _onTimeSelected(selected);
+                                }
+                              },
+                            )
+                        ]),
+                        SizedBox(height: 10),
                         if (period != 'For once')
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text('Duration'),
+                              Icon(
+                                Icons.refresh,
+                                size: 30.0,
+                                color: Colors.blue,
+                              ),
+                              Text('Repeat'),
                               TextButton(
                                 onPressed: () => {
                                   if (selectedDuration == 2)
@@ -621,7 +656,7 @@ class NoteAdderState extends State<NoteAdder> {
                           ),
                       ],
                     ),
-                  SizedBox(height: 25.0),
+                  SizedBox(height: 20.0),
                   ElevatedButton(
                     onPressed: () async {
                       DateTime targetDate;

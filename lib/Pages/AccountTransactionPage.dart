@@ -1,3 +1,4 @@
+import 'package:MBA22/Pages/Widgets/targetDateBar.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:MBA22/Models/AccountModel.dart';
@@ -245,35 +246,12 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                           '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
                                       SizedBox(height: 10),
                                       if (data['period'] != 'Now')
-                                        Container(
-                                          width: 250,
-                                          padding: EdgeInsets.all(5),
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(8.0),
-                                            color: data['period'] != 'Past' &&
-                                                    data['isDone'] == true
-                                                ? Colors.blue
-                                                : Colors.grey,
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons.access_time,
-                                                size: 16.0,
-                                                color: Colors.white,
-                                              ),
-                                              SizedBox(width: 4.0),
-                                              Text(
-                                                '${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())} / ${data['period']}',
-                                                style: TextStyle(
-                                                    color: Colors.white),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
+                                        TargetDateBar(
+                                            targetDate:
+                                                data['targetDate'].toDate(),
+                                            period: data['period'],
+                                            duration: data['duration'],
+                                            isDone: data['isDone']),
                                       SizedBox(height: 10)
                                     ],
                                   ),
@@ -481,35 +459,12 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                         '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
                                     SizedBox(height: 10),
                                     if (data['period'] != 'Now')
-                                      Container(
-                                        width: 250,
-                                        padding: EdgeInsets.all(5),
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(8.0),
-                                          color: data['isDone'] == false &&
-                                                  data['period'] != 'Past'
-                                              ? Colors.blue
-                                              : Colors.grey,
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.access_time,
-                                              size: 16.0,
-                                              color: Colors.white,
-                                            ),
-                                            SizedBox(width: 4.0),
-                                            Text(
-                                              '${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())} / ${data['period']}',
-                                              style: TextStyle(
-                                                  color: Colors.white),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
+                                      TargetDateBar(
+                                          targetDate:
+                                              data['targetDate'].toDate(),
+                                          period: data['period'],
+                                          duration: data['duration'],
+                                          isDone: data['isDone']),
                                     SizedBox(height: 10)
                                   ]),
                                 ),
@@ -726,35 +681,12 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                         '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
                                     SizedBox(height: 10),
                                     if (data['period'] != 'Now')
-                                      Container(
-                                        width: 250,
-                                        padding: EdgeInsets.all(5),
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(8.0),
-                                          color: data['period'] != 'Past' &&
-                                                  data['isDone'] == true
-                                              ? Colors.blue
-                                              : Colors.grey,
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.access_time,
-                                              size: 16.0,
-                                              color: Colors.white,
-                                            ),
-                                            SizedBox(width: 4.0),
-                                            Text(
-                                              '${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())} / ${data['period']}',
-                                              style: TextStyle(
-                                                  color: Colors.white),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
+                                      TargetDateBar(
+                                          targetDate:
+                                              data['targetDate'].toDate(),
+                                          period: data['period'],
+                                          duration: data['duration'],
+                                          isDone: data['isDone']),
                                     SizedBox(height: 10)
                                   ]),
                                 ),
@@ -1161,7 +1093,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                         }
                       },
                     ),
-                    SizedBox(height: 25.0),
+                    SizedBox(height: 25),
                     Column(
                       children: [
                         GestureDetector(
@@ -1184,11 +1116,11 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                             ],
                           ),
                         ),
-                        SizedBox(height: 20),
+                        SizedBox(height: 10),
                         Row(
                           children: [
                             Icon(
-                              Icons.access_time,
+                              Icons.calendar_month,
                               size: 30.0,
                               color: Colors.blue,
                             ),
@@ -1208,10 +1140,24 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                                   (String value) {
                                 return DropdownMenuItem<String>(
                                   value: value,
-                                  child: Text(value),
+                                  child: Text(
+                                    value,
+                                    style: TextStyle(color: Colors.black),
+                                  ),
                                 );
                               }).toList(),
                             ),
+                          ],
+                        ),
+                        SizedBox(height: 10),
+                        Row(
+                          children: [
+                            if (period != 'Now')
+                              Icon(
+                                Icons.access_time,
+                                size: 30.0,
+                                color: Colors.blue,
+                              ),
                             if (period != 'Now' && period != 'Past')
                               GestureDetector(
                                 child: Text(
@@ -1258,7 +1204,8 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                               GestureDetector(
                                 child: Text(
                                   '  ${timeFormatter.format(DateTime(0, 0, 0, _selectedTime.hour, _selectedTime.minute))}',
-                                  style: TextStyle(fontSize: 16),
+                                  style: TextStyle(
+                                      fontSize: 16, color: Colors.black),
                                 ),
                                 onTap: () async {
                                   final TimeOfDay? selected =
@@ -1273,14 +1220,18 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                               ),
                           ],
                         ),
-                        SizedBox(height: 20),
+                        SizedBox(height: 10),
                         if (period != 'Now' &&
                             period != 'For once' &&
                             period != 'Past')
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text('Duration'),
+                              Icon(
+                                Icons.refresh,
+                                size: 30.0,
+                                color: Colors.blue,
+                              ),
+                              Text('Repeat'),
                               TextButton(
                                 onPressed: () => {
                                   if (selectedDuration == 2)
@@ -1522,11 +1473,11 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                             ],
                           ),
                         ),
-                        SizedBox(height: 20),
+                        SizedBox(height: 10),
                         Row(
                           children: [
                             Icon(
-                              Icons.access_time,
+                              Icons.calendar_month,
                               size: 30.0,
                               color: Colors.blue,
                             ),
@@ -1540,17 +1491,30 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                                 setState(() {
                                   dropDownValuePeriod = value!;
                                   period = value;
-                                  print(value + dropDownValuePeriod + period);
                                 });
                               },
                               items: periodList.map<DropdownMenuItem<String>>(
                                   (String value) {
                                 return DropdownMenuItem<String>(
                                   value: value,
-                                  child: Text(value),
+                                  child: Text(
+                                    value,
+                                    style: TextStyle(color: Colors.black),
+                                  ),
                                 );
                               }).toList(),
                             ),
+                          ],
+                        ),
+                        SizedBox(height: 10),
+                        Row(
+                          children: [
+                            if (period != 'Now')
+                              Icon(
+                                Icons.access_time,
+                                size: 30.0,
+                                color: Colors.blue,
+                              ),
                             if (period != 'Now' && period != 'Past')
                               GestureDetector(
                                 child: Text(
@@ -1597,7 +1561,8 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                               GestureDetector(
                                 child: Text(
                                   '  ${timeFormatter.format(DateTime(0, 0, 0, _selectedTime.hour, _selectedTime.minute))}',
-                                  style: TextStyle(fontSize: 16),
+                                  style: TextStyle(
+                                      fontSize: 16, color: Colors.black),
                                 ),
                                 onTap: () async {
                                   final TimeOfDay? selected =
@@ -1612,14 +1577,18 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                               ),
                           ],
                         ),
-                        SizedBox(height: 20),
+                        SizedBox(height: 10),
                         if (period != 'Now' &&
                             period != 'For once' &&
                             period != 'Past')
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text('Duration'),
+                              Icon(
+                                Icons.refresh,
+                                size: 30.0,
+                                color: Colors.blue,
+                              ),
+                              Text('Repeat'),
                               TextButton(
                                 onPressed: () => {
                                   if (selectedDuration == 2)

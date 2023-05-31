@@ -15,6 +15,8 @@ import '../Services/ExchangerateRequester.dart';
 import '../constants.dart';
 import 'package:intl/intl.dart';
 
+import 'Widgets/TargetDateBar.dart';
+
 class MainPage extends StatefulWidget {
   final String currentLedgerID;
   MainPage(this.currentLedgerID);
@@ -42,14 +44,14 @@ class _MainPage extends State<MainPage> {
         .where('transactionType',
             whereIn: ['Sell', 'Collection', 'Decrease', 'Income']);
 
-    double totalRevenue = 0;
+    double totalRevenue = 0.0;
 
     try {
       QuerySnapshot snapshot = await userAccountTransactions.get();
       ExchangerateRequester requester = new ExchangerateRequester();
       for (DocumentSnapshot doc in snapshot.docs) {
-        double convertedCurrency =
-            await requester.getRate(doc['currencies'][0], 'TRY', doc['total']);
+        double convertedCurrency = await requester.getRate(
+            doc['currencies'][0], 'TRY', doc['total'].toDouble());
         totalRevenue += convertedCurrency;
       }
     } catch (error) {
@@ -70,14 +72,14 @@ class _MainPage extends State<MainPage> {
         .where('transactionType',
             whereIn: ['Buy', 'Payment', 'Increase', 'Outcome']);
 
-    double totalExpense = 0;
+    double totalExpense = 0.0;
 
     try {
       QuerySnapshot snapshot = await userAccountTransactions.get();
       ExchangerateRequester requester = new ExchangerateRequester();
       for (DocumentSnapshot doc in snapshot.docs) {
-        double convertedCurrency =
-            await requester.getRate(doc['currencies'][0], 'TRY', doc['total']);
+        double convertedCurrency = await requester.getRate(
+            doc['currencies'][0], 'TRY', doc['total'].toDouble());
         totalExpense += convertedCurrency;
       }
     } catch (error) {
@@ -121,7 +123,7 @@ class _MainPage extends State<MainPage> {
           CarouselSlider(
             carouselController: buttonCarouselController,
             options: CarouselOptions(
-              height: MediaQuery.of(context).size.height/10 * 7,
+              height: MediaQuery.of(context).size.height / 10 * 7,
               aspectRatio: 16 / 9,
               viewportFraction: 1,
               initialPage: 0,
@@ -133,9 +135,7 @@ class _MainPage extends State<MainPage> {
               scrollDirection: Axis.horizontal,
             ),
             items: [
-              Column(
-                mainAxisSize: MainAxisSize.max,
-                children: [
+              Column(mainAxisSize: MainAxisSize.max, children: [
                 Text(
                   "Categories",
                   textAlign: TextAlign.center,
@@ -774,7 +774,7 @@ class _MainPage extends State<MainPage> {
         .where('isDone', isEqualTo: false)
         .orderBy('targetDate', descending: true);
     return Padding(
-        padding: EdgeInsets.only(left: 50, top: 0, right: 50, bottom: 0),
+        padding: EdgeInsets.only(left: 10, top: 0, right: 10, bottom: 0),
         child: Container(
             constraints: BoxConstraints(
               maxWidth: 1000,
@@ -935,32 +935,12 @@ class _MainPage extends State<MainPage> {
                                         '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
                                     SizedBox(height: 10),
                                     if (data['period'] != 'Now')
-                                      Container(
-                                        width: 250,
-                                        padding: EdgeInsets.all(5),
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(8.0),
-                                          color: Colors.blue,
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.access_time,
-                                              size: 16.0,
-                                              color: Colors.white,
-                                            ),
-                                            SizedBox(width: 4.0),
-                                            Text(
-                                              '${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())} / ${data['period']}',
-                                              style: TextStyle(
-                                                  color: Colors.white),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
+                                      TargetDateBar(
+                                          targetDate:
+                                              data['targetDate'].toDate(),
+                                          period: data['period'],
+                                          duration: data['duration'],
+                                          isDone: data['isDone']),
                                     SizedBox(height: 10)
                                   ],
                                 ),
@@ -1114,32 +1094,11 @@ class _MainPage extends State<MainPage> {
                                       '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
                                   SizedBox(height: 10),
                                   if (data['period'] != 'Now')
-                                    Container(
-                                      width: 250,
-                                      padding: EdgeInsets.all(5),
-                                      decoration: BoxDecoration(
-                                        borderRadius:
-                                            BorderRadius.circular(8.0),
-                                        color: Colors.blue,
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.access_time,
-                                            size: 16.0,
-                                            color: Colors.white,
-                                          ),
-                                          SizedBox(width: 4.0),
-                                          Text(
-                                            '${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())} / ${data['period']}',
-                                            style:
-                                                TextStyle(color: Colors.white),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                                    TargetDateBar(
+                                        targetDate: data['targetDate'].toDate(),
+                                        period: data['period'],
+                                        duration: data['duration'],
+                                        isDone: data['isDone']),
                                   SizedBox(height: 10)
                                 ]),
                               ),
@@ -1294,32 +1253,11 @@ class _MainPage extends State<MainPage> {
                                       '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
                                   SizedBox(height: 10),
                                   if (data['period'] != 'Now')
-                                    Container(
-                                      width: 250,
-                                      padding: EdgeInsets.all(5),
-                                      decoration: BoxDecoration(
-                                        borderRadius:
-                                            BorderRadius.circular(8.0),
-                                        color: Colors.blue,
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.access_time,
-                                            size: 16.0,
-                                            color: Colors.white,
-                                          ),
-                                          SizedBox(width: 4.0),
-                                          Text(
-                                            '${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())} / ${data['period']}',
-                                            style:
-                                                TextStyle(color: Colors.white),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                                    TargetDateBar(
+                                        targetDate: data['targetDate'].toDate(),
+                                        period: data['period'],
+                                        duration: data['duration'],
+                                        isDone: data['isDone']),
                                 ]),
                               ),
                             );
@@ -1364,7 +1302,7 @@ class _MainPage extends State<MainPage> {
         .where('isActive', isEqualTo: true)
         .orderBy('updateDate', descending: true);
     return Padding(
-        padding: EdgeInsets.only(left: 50, top: 0, right: 50, bottom: 0),
+        padding: EdgeInsets.only(left: 10, top: 0, right: 10, bottom: 0),
         child: Container(
             constraints: BoxConstraints(
               maxWidth: 1000,
@@ -1498,35 +1436,14 @@ class _MainPage extends State<MainPage> {
                                                         .toDate()
                                                         .toLocal())),
                                         ]),
-                                        SizedBox(height: 25),
                                         SizedBox(height: 10),
                                         if (data['period'] != 'Now')
-                                          Container(
-                                            width: 250,
-                                            padding: EdgeInsets.all(5),
-                                            decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(8.0),
-                                              color: Colors.blue,
-                                            ),
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                Icon(
-                                                  Icons.access_time,
-                                                  size: 16.0,
-                                                  color: Colors.white,
-                                                ),
-                                                SizedBox(width: 4.0),
-                                                Text(
-                                                  '${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())} / ${data['period']}',
-                                                  style: TextStyle(
-                                                      color: Colors.white),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
+                                          TargetDateBar(
+                                              targetDate:
+                                                  data['targetDate'].toDate(),
+                                              period: data['period'],
+                                              duration: data['duration'],
+                                              isDone: data['isDone']),
                                         SizedBox(height: 10)
                                       ])),
                                 );
