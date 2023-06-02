@@ -719,7 +719,8 @@ class NoteAdderState extends State<NoteAdder> {
         duration: selectedDuration,
         createDate: DateTime.now(),
         updateDate: DateTime.now(),
-        isActive: true);
+        isActive: true,
+        isDone: selectedNoteType == "Note" ? true : false);
 
     DocumentReference noteDoc = await stocks.add({
       'ledgerID': newNote.ledgerID,
@@ -731,7 +732,8 @@ class NoteAdderState extends State<NoteAdder> {
       'duration': newNote.duration,
       'createDate': Timestamp.fromDate(newNote.createDate),
       'updateDate': Timestamp.fromDate(newNote.updateDate),
-      'isActive': newNote.isActive
+      'isActive': newNote.isActive,
+      'isDone': newNote.isDone
     });
   }
 }

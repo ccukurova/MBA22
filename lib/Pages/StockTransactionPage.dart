@@ -936,8 +936,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                             _selectedTime.minute,
                           );
                         } else {
-                          targetDate = DateTime.fromMillisecondsSinceEpoch(0,
-                              isUtc: true);
+                          targetDate = DateTime.now();
                         }
                         if (_formKey.currentState!.validate() &&
                             selectedDurationText != "0" &&
@@ -1418,8 +1417,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                             _selectedTime.minute,
                           );
                         } else {
-                          targetDate = DateTime.fromMillisecondsSinceEpoch(0,
-                              isUtc: true);
+                          targetDate = DateTime.now();
                         }
                         if (_formKey.currentState!.validate() &&
                             selectedDurationText != "0" &&

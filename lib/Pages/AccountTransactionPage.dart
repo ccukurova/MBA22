@@ -1,3 +1,5 @@
+import 'dart:html';
+
 import 'package:MBA22/Pages/Widgets/targetDateBar.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -769,9 +771,9 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
 
   String? currentAccountID;
   String? accountType;
-  TextEditingController duration = TextEditingController();
-
+  TextEditingController duration = TextEditingController(text: '∞');
   String selectedDurationText = "∞";
+
   int selectedDuration = -1;
   String selectedSourceAccount = 'Select an internal account';
   @override
@@ -787,8 +789,13 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
     prefs.getString("accountType").then((value) {
       setState(() {
         accountType = value;
-        if (accountType == "Internal") {
+        if (widget.document != null) {
+          selectedTransactionType = widget.document!['transactionType'];
+          setFieldValuesToUpdate();
+        } else if (accountType == "Internal") {
           selectedTransactionType = 'Income';
+        } else if (accountType == 'External') {
+          selectedTransactionType = 'Increase';
         }
       });
     });
@@ -850,11 +857,10 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
       'Every month',
       'Every year'
     ];
-    duration.text = '∞';
 
-    if (widget.document != null && widget.document!.exists) {
-      setFieldValuesToUpdate();
-    }
+    // if (widget.document != null && widget.document!.exists) {
+    //   setFieldValuesToUpdate();
+    // }
 
     return Stack(children: [
       Row(
@@ -1294,8 +1300,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                             _selectedTime.minute,
                           );
                         } else {
-                          targetDate = DateTime.fromMillisecondsSinceEpoch(0,
-                              isUtc: true);
+                          targetDate = DateTime.now();
                         }
                         if (_formKey.currentState!.validate() &&
                             selectedDurationText != "0" &&
@@ -1325,16 +1330,34 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                             ScaffoldMessenger.of(context)
                                 .showSnackBar(snackBar);
                           } else {
-                            createAccountTransaction(
-                                selectedTransactionType,
-                                total,
-                                total,
-                                currencies,
-                                transactionDetail,
-                                "",
-                                targetDate,
-                                selectedDuration,
-                                period);
+                            if (widget.document == null) {
+                              createAccountTransaction(
+                                  selectedTransactionType,
+                                  total,
+                                  total,
+                                  currencies,
+                                  transactionDetail,
+                                  "",
+                                  targetDate,
+                                  selectedDuration,
+                                  period,
+                                  DateTime.now(),
+                                  "");
+                            } else {
+                              createAccountTransaction(
+                                  selectedTransactionType,
+                                  total,
+                                  total,
+                                  currencies,
+                                  transactionDetail,
+                                  "",
+                                  targetDate,
+                                  selectedDuration,
+                                  period,
+                                  widget.document!['createDate'].toDate(),
+                                  widget.document!.id);
+                            }
+
                             Navigator.pop(context);
                           }
                         }
@@ -1651,8 +1674,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                             _selectedTime.minute,
                           );
                         } else {
-                          targetDate = DateTime.fromMillisecondsSinceEpoch(0,
-                              isUtc: true);
+                          targetDate = DateTime.now();
                         }
                         if (_formKey.currentState!.validate() &&
                             selectedDurationText != "0" &&
@@ -1721,18 +1743,34 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                                 currencies = [baseCurrency, targetCurrency];
 
                                 bool isDone;
+                                if (widget.document == null) {
+                                  createAccountTransaction(
+                                      selectedTransactionType,
+                                      total,
+                                      convertedTotal,
+                                      currencies,
+                                      transactionDetail,
+                                      selectedSourceAccount,
+                                      targetDate,
+                                      selectedDuration,
+                                      period,
+                                      DateTime.now(),
+                                      "");
+                                } else {
+                                  createAccountTransaction(
+                                      selectedTransactionType,
+                                      total,
+                                      total,
+                                      currencies,
+                                      transactionDetail,
+                                      selectedSourceAccount,
+                                      targetDate,
+                                      selectedDuration,
+                                      period,
+                                      widget.document!['createDate'].toDate(),
+                                      widget.document!.id);
+                                }
 
-                                createAccountTransaction(
-                                  selectedTransactionType,
-                                  total,
-                                  convertedTotal,
-                                  currencies,
-                                  transactionDetail,
-                                  selectedSourceAccount,
-                                  targetDate,
-                                  selectedDuration,
-                                  period,
-                                );
                                 Navigator.pop(context);
                               } else {
                                 setState(() {
@@ -1764,10 +1802,13 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
 
     selectedTransactionType = document['transactionType'];
 
-    // await accounts
-    //     .doc(document['accountID'][1])
-    //     .get()
-    //     .then((value) => selectedSourceAccount = value['accountName']);
+    if (selectedTransactionType == 'Collection' ||
+        selectedTransactionType == 'Payment') {
+      await accounts
+          .doc(document['accountID'][1])
+          .get()
+          .then((value) => selectedSourceAccount = value['accountName']);
+    }
 
     amountTextController.text = document['total'].toString();
     detailsTextController.text = document['transactionDetail'];
@@ -1797,7 +1838,9 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
       String _selectedSourceAccount,
       DateTime _targetDate,
       int _selectedDuration,
-      String _period) async {
+      String _period,
+      DateTime createDate,
+      String transactionID) async {
     String? currentAccountID = await prefs.getString("accountID");
     String? currentLedgerID = await prefs.getString("ledgerID");
     var newAccountTransaction;
@@ -1851,30 +1894,50 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
           duration: _selectedDuration,
           targetDate: _targetDate,
           isDone: isDone,
-          createDate: DateTime.now(),
+          createDate: createDate,
           updateDate: DateTime.now(),
           isActive: true);
-
-      DocumentReference transactionsDoc = await transactions.add({
-        'accountID': newAccountTransaction.accountID,
-        'ledgerID': newAccountTransaction.ledgerID,
-        'stockID': newAccountTransaction.stockID,
-        'transactionType': newAccountTransaction.transactionType,
-        'amount': newAccountTransaction.amount,
-        'total': newAccountTransaction.total,
-        'convertedTotal': newAccountTransaction.convertedTotal,
-        'currencies': newAccountTransaction.currencies,
-        'price': newAccountTransaction.price,
-        'transactionDetail': newAccountTransaction.transactionDetail,
-        'categoryName': newAccountTransaction.categoryName,
-        'period': newAccountTransaction.period,
-        'duration': newAccountTransaction.duration,
-        'targetDate': newAccountTransaction.targetDate,
-        'isDone': newAccountTransaction.isDone,
-        'createDate': Timestamp.fromDate(newAccountTransaction.createDate),
-        'updateDate': Timestamp.fromDate(newAccountTransaction.updateDate),
-        'isActive': newAccountTransaction.isActive
-      });
+      if (transactionID == "") {
+        DocumentReference createdTransactionRef = await transactions.add({
+          'accountID': newAccountTransaction.accountID,
+          'ledgerID': newAccountTransaction.ledgerID,
+          'stockID': newAccountTransaction.stockID,
+          'transactionType': newAccountTransaction.transactionType,
+          'amount': newAccountTransaction.amount,
+          'total': newAccountTransaction.total,
+          'convertedTotal': newAccountTransaction.convertedTotal,
+          'currencies': newAccountTransaction.currencies,
+          'price': newAccountTransaction.price,
+          'transactionDetail': newAccountTransaction.transactionDetail,
+          'categoryName': newAccountTransaction.categoryName,
+          'period': newAccountTransaction.period,
+          'duration': newAccountTransaction.duration,
+          'targetDate': newAccountTransaction.targetDate,
+          'isDone': newAccountTransaction.isDone,
+          'createDate': Timestamp.fromDate(newAccountTransaction.createDate),
+          'updateDate': Timestamp.fromDate(newAccountTransaction.updateDate),
+          'isActive': newAccountTransaction.isActive
+        });
+      } else {
+        await transactions.doc(transactionID).update({
+          'accountID': newAccountTransaction.accountID,
+          'stockID': newAccountTransaction.stockID,
+          'transactionType': newAccountTransaction.transactionType,
+          'amount': newAccountTransaction.amount,
+          'total': newAccountTransaction.total,
+          'convertedTotal': newAccountTransaction.convertedTotal,
+          'currencies': newAccountTransaction.currencies,
+          'price': newAccountTransaction.price,
+          'transactionDetail': newAccountTransaction.transactionDetail,
+          'categoryName': newAccountTransaction.categoryName,
+          'period': newAccountTransaction.period,
+          'duration': newAccountTransaction.duration,
+          'targetDate': newAccountTransaction.targetDate,
+          'isDone': newAccountTransaction.isDone,
+          'updateDate': Timestamp.fromDate(newAccountTransaction.updateDate),
+          'isActive': newAccountTransaction.isActive
+        });
+      }
     } catch (e) {
       print('Error caught: $e');
     }

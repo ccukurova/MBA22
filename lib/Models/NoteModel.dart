@@ -9,6 +9,7 @@ class NoteModel {
   DateTime createDate;
   DateTime updateDate;
   bool isActive;
+  bool isDone;
 
   String get getLedgerID => this.ledgerID;
 
@@ -50,6 +51,10 @@ class NoteModel {
 
   set setIsActive(isActive) => this.isActive = isActive;
 
+  bool get getIsDone => this.isDone;
+
+  set setIsDone(bool isDone) => this.isDone = isDone;
+
   NoteModel(
       {required this.ledgerID,
       required this.heading,
@@ -60,5 +65,6 @@ class NoteModel {
       required this.duration,
       required this.createDate,
       required this.updateDate,
-      required this.isActive});
+      required this.isActive,
+      required this.isDone});
 }
