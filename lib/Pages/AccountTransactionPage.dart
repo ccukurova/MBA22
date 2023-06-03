@@ -1,5 +1,6 @@
 import 'dart:html';
 
+import 'package:MBA22/Pages/StockTransactionPage.dart';
 import 'package:MBA22/Pages/Widgets/targetDateBar.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -584,12 +585,16 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                               Icon(Icons.edit),
                                                           title: Text('Update'),
                                                           onTap: () {
-                                                            // do something
                                                             Navigator.pop(
                                                                 context);
-                                                            // showStockTransactionUpdaterDialog(
-                                                            //     context,
-                                                            //     document);
+                                                            StockTransactionPageState
+                                                                stockTransactionPage =
+                                                                new StockTransactionPageState();
+                                                            stockTransactionPage
+                                                                .showStockTransactionAdderDialog(
+                                                                    context,
+                                                                    document:
+                                                                        document);
                                                           },
                                                         ),
                                                         ListTile(
@@ -1341,7 +1346,6 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                                   targetDate,
                                   selectedDuration,
                                   period,
-                                  DateTime.now(),
                                   "");
                             } else {
                               createAccountTransaction(
@@ -1354,7 +1358,6 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                                   targetDate,
                                   selectedDuration,
                                   period,
-                                  widget.document!['createDate'].toDate(),
                                   widget.document!.id);
                             }
 
@@ -1754,7 +1757,6 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                                       targetDate,
                                       selectedDuration,
                                       period,
-                                      DateTime.now(),
                                       "");
                                 } else {
                                   createAccountTransaction(
@@ -1767,7 +1769,6 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                                       targetDate,
                                       selectedDuration,
                                       period,
-                                      widget.document!['createDate'].toDate(),
                                       widget.document!.id);
                                 }
 
@@ -1839,7 +1840,6 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
       DateTime _targetDate,
       int _selectedDuration,
       String _period,
-      DateTime createDate,
       String transactionID) async {
     String? currentAccountID = await prefs.getString("accountID");
     String? currentLedgerID = await prefs.getString("ledgerID");
@@ -1894,7 +1894,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
           duration: _selectedDuration,
           targetDate: _targetDate,
           isDone: isDone,
-          createDate: createDate,
+          createDate: DateTime.now(),
           updateDate: DateTime.now(),
           isActive: true);
       if (transactionID == "") {

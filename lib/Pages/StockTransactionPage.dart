@@ -964,19 +964,41 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                             ScaffoldMessenger.of(context)
                                 .showSnackBar(snackBar);
                           } else {
-                            createStockTransaction(
-                                selectedTransactionType,
-                                amount,
-                                price,
-                                total,
-                                total,
-                                currencies,
-                                transactionDetail,
-                                selectedSourceAccount,
-                                selectedExternalAccount,
-                                selectedDuration,
-                                targetDate,
-                                period);
+                            String? currentStockID =
+                                await prefs.getString("stockID");
+                            if (widget.document == null) {
+                              createStockTransaction(
+                                  selectedTransactionType,
+                                  amount,
+                                  price,
+                                  total,
+                                  0,
+                                  currencies,
+                                  transactionDetail,
+                                  selectedSourceAccount,
+                                  selectedExternalAccount,
+                                  selectedDuration,
+                                  targetDate,
+                                  period,
+                                  "",
+                                  currentStockID);
+                            } else {
+                              createStockTransaction(
+                                  selectedTransactionType,
+                                  amount,
+                                  price,
+                                  total,
+                                  0,
+                                  currencies,
+                                  transactionDetail,
+                                  selectedSourceAccount,
+                                  selectedExternalAccount,
+                                  selectedDuration,
+                                  targetDate,
+                                  period,
+                                  widget.document!.id,
+                                  currentStockID);
+                            }
                             Navigator.pop(context);
                           }
                         }
@@ -1499,20 +1521,42 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
 
                               double convertedTotal = await calculateCurrency(
                                   total, baseCurrency, targetCurrency);
+                              String? currentStockID =
+                                  await prefs.getString("stockID");
+                              if (widget.document == null) {
+                                createStockTransaction(
+                                    selectedTransactionType,
+                                    amount,
+                                    price,
+                                    total,
+                                    convertedTotal,
+                                    currencies,
+                                    transactionDetail,
+                                    selectedSourceAccount,
+                                    selectedExternalAccount,
+                                    selectedDuration,
+                                    targetDate,
+                                    period,
+                                    "",
+                                    currentStockID);
+                              } else {
+                                createStockTransaction(
+                                    selectedTransactionType,
+                                    amount,
+                                    price,
+                                    total,
+                                    convertedTotal,
+                                    currencies,
+                                    transactionDetail,
+                                    selectedSourceAccount,
+                                    selectedExternalAccount,
+                                    selectedDuration,
+                                    targetDate,
+                                    period,
+                                    widget.document!.id,
+                                    currentStockID);
+                              }
 
-                              createStockTransaction(
-                                  selectedTransactionType,
-                                  amount,
-                                  price,
-                                  total,
-                                  convertedTotal,
-                                  currencies,
-                                  transactionDetail,
-                                  selectedSourceAccount,
-                                  selectedExternalAccount,
-                                  selectedDuration,
-                                  targetDate,
-                                  period);
                               Navigator.pop(context);
                             }
                           }
@@ -1548,9 +1592,10 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
           .get()
           .then((value) => selectedExternalAccount = value['accountName']);
     }
-
-    amountTextController.text = document['total'].toString();
-    priceTextController.text = document['price'].toString();
+    amount = document['amount'];
+    amountTextController.text = amount.toString();
+    price = document['price'];
+    priceTextController.text = price.toString();
     total = document['total'];
     totalOutput = total.toString();
     detailsTextController.text = document['transactionDetail'];
@@ -1583,10 +1628,14 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
       String _selectedExternalAccount,
       int _selectedDuration,
       DateTime _targetDate,
-      String _period) async {
+      String _period,
+      String transactionID,
+      String? currentStockID) async {
+    CollectionReference transactions =
+        FirebaseFirestore.instance.collection('transactions');
     String? currentLedgerID = await prefs.getString("ledgerID");
-    String? currentStockID = await prefs.getString("stockID");
-    var newAddStockTransaction;
+
+    var newStockTransaction;
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     CollectionReference stocks = firestore.collection('stocks');
     CollectionReference accounts = firestore.collection('accounts');
@@ -1594,6 +1643,12 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
     String externalAccountID = "";
     String? choosenCategory = await prefs.getString("choosenCategory");
     choosenCategory = choosenCategory ?? "";
+    bool isDone;
+    if (_selectedDuration == 0) {
+      isDone = true;
+    } else {
+      isDone = false;
+    }
 
     if (_selectedTransactionType == 'Buy' ||
         _selectedTransactionType == 'Sell') {
@@ -1637,7 +1692,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
     }
 
     try {
-      newAddStockTransaction = TransactionModel(
+      newStockTransaction = TransactionModel(
           accountID: [externalAccountID, sourceAccountID],
           ledgerID: currentLedgerID!,
           stockID: currentStockID!,
@@ -1657,26 +1712,47 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
           updateDate: DateTime.now(),
           isActive: true);
 
-      DocumentReference transactionsDoc = await stockTransactions.add({
-        'accountID': newAddStockTransaction.accountID,
-        'ledgerID': newAddStockTransaction.ledgerID,
-        'stockID': newAddStockTransaction.stockID,
-        'transactionType': newAddStockTransaction.transactionType,
-        'amount': newAddStockTransaction.amount,
-        'total': newAddStockTransaction.total,
-        'convertedTotal': newAddStockTransaction.convertedTotal,
-        'currencies': newAddStockTransaction.currencies,
-        'price': newAddStockTransaction.price,
-        'transactionDetail': newAddStockTransaction.transactionDetail,
-        'categoryName': newAddStockTransaction.categoryName,
-        'period': newAddStockTransaction.period,
-        'duration': newAddStockTransaction.duration,
-        'targetDate': newAddStockTransaction.targetDate,
-        'isDone': newAddStockTransaction.isDone,
-        'createDate': Timestamp.fromDate(newAddStockTransaction.createDate),
-        'updateDate': Timestamp.fromDate(newAddStockTransaction.updateDate),
-        'isActive': newAddStockTransaction.isActive
-      });
+      if (transactionID == "") {
+        DocumentReference createdTransactionRef = await transactions.add({
+          'accountID': newStockTransaction.accountID,
+          'ledgerID': newStockTransaction.ledgerID,
+          'stockID': newStockTransaction.stockID,
+          'transactionType': newStockTransaction.transactionType,
+          'amount': newStockTransaction.amount,
+          'total': newStockTransaction.total,
+          'convertedTotal': newStockTransaction.convertedTotal,
+          'currencies': newStockTransaction.currencies,
+          'price': newStockTransaction.price,
+          'transactionDetail': newStockTransaction.transactionDetail,
+          'categoryName': newStockTransaction.categoryName,
+          'period': newStockTransaction.period,
+          'duration': newStockTransaction.duration,
+          'targetDate': newStockTransaction.targetDate,
+          'isDone': newStockTransaction.isDone,
+          'createDate': Timestamp.fromDate(newStockTransaction.createDate),
+          'updateDate': Timestamp.fromDate(newStockTransaction.updateDate),
+          'isActive': newStockTransaction.isActive
+        });
+      } else {
+        await transactions.doc(transactionID).update({
+          'accountID': newStockTransaction.accountID,
+          'stockID': newStockTransaction.stockID,
+          'transactionType': newStockTransaction.transactionType,
+          'amount': newStockTransaction.amount,
+          'total': newStockTransaction.total,
+          'convertedTotal': newStockTransaction.convertedTotal,
+          'currencies': newStockTransaction.currencies,
+          'price': newStockTransaction.price,
+          'transactionDetail': newStockTransaction.transactionDetail,
+          'categoryName': newStockTransaction.categoryName,
+          'period': newStockTransaction.period,
+          'duration': newStockTransaction.duration,
+          'targetDate': newStockTransaction.targetDate,
+          'isDone': newStockTransaction.isDone,
+          'updateDate': Timestamp.fromDate(newStockTransaction.updateDate),
+          'isActive': newStockTransaction.isActive
+        });
+      }
     } catch (e) {
       print('Error caught: $e');
     }
