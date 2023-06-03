@@ -1594,12 +1594,6 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
     String externalAccountID = "";
     String? choosenCategory = await prefs.getString("choosenCategory");
     choosenCategory = choosenCategory ?? "";
-    bool isDone;
-    if (_selectedDuration == 0) {
-      isDone = true;
-    } else {
-      isDone = false;
-    }
 
     if (_selectedTransactionType == 'Buy' ||
         _selectedTransactionType == 'Sell') {
