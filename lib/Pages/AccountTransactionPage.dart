@@ -1320,7 +1320,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                             );
                             ScaffoldMessenger.of(context)
                                 .showSnackBar(snackBar);
-                          } else if (period == "For once" &&
+                          } else if (period != "Past" &&
                               targetDate.compareTo(DateTime.now()) <= 0) {
                             final snackBar = SnackBar(
                               content: Text(
@@ -1694,7 +1694,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                             );
                             ScaffoldMessenger.of(context)
                                 .showSnackBar(snackBar);
-                          } else if (period == "For once" &&
+                          } else if (period != "Past" &&
                               targetDate.compareTo(DateTime.now()) <= 0) {
                             final snackBar = SnackBar(
                               content: Text(
@@ -1760,7 +1760,7 @@ class AccountTransactionAdderState extends State<AccountTransactionAdder> {
                                   createAccountTransaction(
                                       selectedTransactionType,
                                       total,
-                                      total,
+                                      convertedTotal,
                                       currencies,
                                       transactionDetail,
                                       selectedSourceAccount,
