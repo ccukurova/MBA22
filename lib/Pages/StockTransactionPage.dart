@@ -42,27 +42,14 @@ class StockTransactionPageState extends State<StockTransactionPage> {
     });
   }
 
-  void showStockTransactionAdderDialog(BuildContext context) async {
+  void showStockTransactionAdderDialog(BuildContext context,
+      {DocumentSnapshot<Object?>? document}) async {
     await showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          content: StockTransactionAdder(),
-        );
+        return AlertDialog(content: StockTransactionAdder(document: document));
       },
     );
-  }
-
-  void showStockTransactionUpdaterDialog(
-      BuildContext context, DocumentSnapshot<Object?> document) async {
-    // await showDialog(
-    //   context: context,
-    //   builder: (BuildContext context) {
-    //     return AlertDialog(
-    //       content: StockTransactionUpdater(document),
-    //     );
-    //   },
-    // );
   }
 
   @override
@@ -184,9 +171,10 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                                                             // do something
                                                             Navigator.pop(
                                                                 context);
-                                                            showStockTransactionUpdaterDialog(
+                                                            showStockTransactionAdderDialog(
                                                                 context,
-                                                                document);
+                                                                document:
+                                                                    document);
                                                           },
                                                         ),
                                                         ListTile(
@@ -305,9 +293,10 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                                                             // do something
                                                             Navigator.pop(
                                                                 context);
-                                                            showStockTransactionUpdaterDialog(
+                                                            showStockTransactionAdderDialog(
                                                                 context,
-                                                                document);
+                                                                document:
+                                                                    document);
                                                           },
                                                         ),
                                                         ListTile(
@@ -397,9 +386,6 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                                         }
                                       },
                                     ),
-                                    Text(
-                                        '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
-                                    SizedBox(height: 10),
                                     if (data['period'] != 'Now')
                                       Column(
                                         children: [
@@ -467,7 +453,8 @@ Future<String> getAccountNameByID(String _accountID) async {
 }
 
 class StockTransactionAdder extends StatefulWidget {
-  StockTransactionAdder();
+  final DocumentSnapshot<Object?>? document;
+  const StockTransactionAdder({Key? key, this.document}) : super(key: key);
   @override
   StockTransactionAdderState createState() => StockTransactionAdderState();
 }
@@ -479,6 +466,9 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
   String selectedDurationText = "∞";
   int selectedDuration = -1;
   TextEditingController duration = TextEditingController();
+  TextEditingController amountTextController = new TextEditingController();
+  TextEditingController priceTextController = new TextEditingController();
+  TextEditingController detailsTextController = new TextEditingController();
 
   String period = 'Now';
   String transactionDetail = '';
@@ -518,7 +508,14 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
   @override
   void initState() {
     super.initState();
-    // Start listening to changes.
+    prefs.getString("accountType").then((value) {
+      setState(() {
+        if (widget.document != null) {
+          selectedTransactionType = widget.document!['transactionType'];
+          setFieldValuesToUpdate();
+        }
+      });
+    });
   }
 
   Future<List<String>>? getInternalAccountNames() async {
@@ -583,7 +580,6 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
       'Every month',
       'Every year'
     ];
-    duration.text = '∞';
     return Stack(children: [
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -717,6 +713,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                 child: Column(
                   children: [
                     TextFormField(
+                      controller: amountTextController,
                       decoration: InputDecoration(
                         labelText: 'Amount',
                         border: OutlineInputBorder(),
@@ -743,6 +740,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                     ),
                     SizedBox(height: 16.0),
                     TextFormField(
+                      controller: detailsTextController,
                       decoration: InputDecoration(
                         labelText: 'Details',
                         border: OutlineInputBorder(),
@@ -1099,7 +1097,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                     ),
                     SizedBox(height: 25.0),
                     TextFormField(
-                      initialValue: '0',
+                      controller: amountTextController,
                       decoration: InputDecoration(
                         labelText: 'Amount',
                         border: OutlineInputBorder(),
@@ -1145,7 +1143,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                       ),
                     ),
                     TextFormField(
-                      initialValue: '0',
+                      controller: priceTextController,
                       decoration: InputDecoration(
                         labelText: 'Price',
                         border: OutlineInputBorder(),
@@ -1199,6 +1197,7 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
                     ),
                     SizedBox(height: 25.0),
                     TextFormField(
+                      controller: detailsTextController,
                       decoration: InputDecoration(
                         labelText: 'Details',
                         border: OutlineInputBorder(),
@@ -1528,6 +1527,48 @@ class StockTransactionAdderState extends State<StockTransactionAdder> {
           ),
         ),
     ]);
+  }
+
+  Future<void> setFieldValuesToUpdate() async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    CollectionReference accounts = firestore.collection('accounts');
+
+    DocumentSnapshot<Map<String, dynamic>>? document =
+        widget.document as DocumentSnapshot<Map<String, dynamic>>;
+
+    selectedTransactionType = document['transactionType'];
+
+    if (selectedTransactionType == 'Buy' || selectedTransactionType == 'Sell') {
+      await accounts
+          .doc(document['accountID'][1])
+          .get()
+          .then((value) => selectedSourceAccount = value['accountName']);
+      await accounts
+          .doc(document['accountID'][0])
+          .get()
+          .then((value) => selectedExternalAccount = value['accountName']);
+    }
+
+    amountTextController.text = document['total'].toString();
+    priceTextController.text = document['price'].toString();
+    total = document['total'];
+    totalOutput = total.toString();
+    detailsTextController.text = document['transactionDetail'];
+    updateSelectedCategory(document['categoryName']);
+    period = document['period'];
+    DateTime targetDate = document['targetDate'].toDate();
+    _selectedDate = targetDate;
+    _selectedTime = TimeOfDay(hour: targetDate.hour, minute: targetDate.minute);
+    dropDownValuePeriod = period;
+    if (document['duration'] > 1) {
+      selectedDurationText = document['duration'].toString();
+      duration.text = selectedDurationText;
+      selectedDuration = document['duration'];
+    } else if (document['duration'] <= -1) {
+      selectedDurationText = '∞';
+      duration.text = selectedDurationText;
+      selectedDuration = document['duration'];
+    }
   }
 
   Future<void> createStockTransaction(
