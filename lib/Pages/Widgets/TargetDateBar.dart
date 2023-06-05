@@ -31,13 +31,13 @@ class TargetDateBar extends StatelessWidget {
         children: [
           Icon(
             Icons.access_time,
-            size: 16.0,
+            size: 12,
             color: Colors.white,
           ),
           SizedBox(width: 4.0),
           Text(
             '${DateFormat('dd-MM-yyyy – kk:mm').format(this.targetDate.toLocal())} / ${this.period} x ${this.duration < 0 ? '∞' : this.duration}',
-            style: TextStyle(color: Colors.white, fontSize: 14),
+            style: TextStyle(color: Colors.white, fontSize: 12),
           ),
         ],
       ),

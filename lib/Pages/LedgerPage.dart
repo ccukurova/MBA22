@@ -217,7 +217,8 @@ class _LedgerPage extends State<LedgerPage> {
                                     }).toList(),
                                   );
                                 } else {
-                                  return Text('No data available');
+                                  return Center(
+                                      child: CircularProgressIndicator());
                                 }
                               },
                             ),

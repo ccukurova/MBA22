@@ -77,6 +77,7 @@ class NotePageState extends State<NotePage> {
                     constraints: BoxConstraints(
                       maxWidth: 1000,
                     ),
+                    height: double.infinity,
                     child: SingleChildScrollView(
                       child: Padding(
                         padding: EdgeInsets.all(10.0),
@@ -256,7 +257,9 @@ class NotePageState extends State<NotePage> {
                                                         ),
                                                       ]),
                                                   subtitle: Column(children: [
-                                                    Text(data['noteDetail']),
+                                                    if (data['noteDetail'] !=
+                                                        "")
+                                                      Text(data['noteDetail']),
                                                     SizedBox(height: 10),
                                                     if (data['createDate'] ==
                                                         data['updateDate'])
@@ -281,7 +284,8 @@ class NotePageState extends State<NotePage> {
                                     },
                                   );
                                 } else {
-                                  return Text('No data available');
+                                  return Center(
+                                      child: CircularProgressIndicator());
                                 }
                               },
                             ),

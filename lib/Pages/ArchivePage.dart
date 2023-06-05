@@ -72,7 +72,7 @@ class ArchivePageState extends State<ArchivePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Accounts'),
+        title: Text('Archive'),
       ),
       body: Stack(
         children: [
@@ -82,7 +82,7 @@ class ArchivePageState extends State<ArchivePage> {
                       EdgeInsets.only(left: 10, top: 0, right: 10, bottom: 0),
                   child: Container(
                     constraints: BoxConstraints(
-                      maxWidth: 1000,
+                      maxWidth: 600,
                     ),
                     child: SingleChildScrollView(
                       child: Padding(
@@ -109,181 +109,175 @@ class ArchivePageState extends State<ArchivePage> {
                                       String documentId =
                                           document.id; // Get the document ID
                                       return InkWell(
-                                        onTap: () {
-                                          // Go to transactions
-                                        },
-                                        child: ListTile(
-                                          title: Text(data['accountName']),
-                                          subtitle: Row(children: [
-                                            Text('${data['accountType']}/'),
-                                            Text(data['unit'])
-                                          ]),
                                           onTap: () {
-                                            setAccountID(document);
-                                            setAccountType(document);
-                                            Navigator.pushReplacement(
-                                                context,
-                                                MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        ArchiveTransactionPage()));
+                                            // Go to transactions
                                           },
-                                          trailing: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              BalanceText(documentId),
-                                              IconButton(
-                                                icon: Icon(Icons.more_vert),
-                                                onPressed: () {
-                                                  setState(() {
-                                                    showModalBottomSheet(
-                                                      context: context,
-                                                      builder: (BuildContext
-                                                          context) {
-                                                        return Container(
-                                                          child: Column(
-                                                            mainAxisSize:
-                                                                MainAxisSize
-                                                                    .min,
-                                                            children: <Widget>[
-                                                              ListTile(
-                                                                leading: Icon(
-                                                                    Icons.edit),
-                                                                title: Text(
-                                                                    'Unarchive'),
-                                                                onTap:
-                                                                    () async {
-                                                                  // do something
-                                                                  String
-                                                                      documentId =
-                                                                      document
-                                                                          .id;
+                                          child: Card(
+                                            child: ListTile(
+                                              title: Text(data['accountName']),
+                                              subtitle: Row(children: [
+                                                Text('${data['accountType']}/'),
+                                                Text(data['unit'])
+                                              ]),
+                                              onTap: () {
+                                                setAccountID(document);
+                                                setAccountType(document);
+                                                Navigator.pushReplacement(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            ArchiveTransactionPage()));
+                                              },
+                                              trailing: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  BalanceText(documentId),
+                                                  IconButton(
+                                                    icon: Icon(Icons.more_vert),
+                                                    onPressed: () {
+                                                      setState(() {
+                                                        showModalBottomSheet(
+                                                          context: context,
+                                                          builder: (BuildContext
+                                                              context) {
+                                                            return Container(
+                                                              child: Column(
+                                                                mainAxisSize:
+                                                                    MainAxisSize
+                                                                        .min,
+                                                                children: <
+                                                                    Widget>[
+                                                                  ListTile(
+                                                                    leading: Icon(
+                                                                        Icons
+                                                                            .edit),
+                                                                    title: Text(
+                                                                        'Unarchive'),
+                                                                    onTap:
+                                                                        () async {
+                                                                      // do something
+                                                                      String
+                                                                          documentId =
+                                                                          document
+                                                                              .id;
 
-                                                                  Query userAccountTransactions = transactions
-                                                                      .where(
-                                                                          'accountID',
-                                                                          arrayContains:
-                                                                              documentId)
-                                                                      .where(
-                                                                          'isActive',
-                                                                          isEqualTo:
-                                                                              false)
-                                                                      .orderBy(
-                                                                          'createDate',
-                                                                          descending:
-                                                                              true);
-                                                                  firestore
-                                                                      .runTransaction(
-                                                                          (transaction) async {
-                                                                    QuerySnapshot
-                                                                        snapshot =
-                                                                        await userAccountTransactions
-                                                                            .get();
-                                                                    List<DocumentSnapshot>
-                                                                        documents =
-                                                                        snapshot
-                                                                            .docs;
-                                                                    for (DocumentSnapshot document
-                                                                        in documents) {
-                                                                      await transaction
-                                                                          .update(
+                                                                      Query userAccountTransactions = transactions
+                                                                          .where(
+                                                                              'accountID',
+                                                                              arrayContains:
+                                                                                  documentId)
+                                                                          .where(
+                                                                              'isActive',
+                                                                              isEqualTo:
+                                                                                  false)
+                                                                          .orderBy(
+                                                                              'createDate',
+                                                                              descending: true);
+                                                                      firestore
+                                                                          .runTransaction(
+                                                                              (transaction) async {
+                                                                        QuerySnapshot
+                                                                            snapshot =
+                                                                            await userAccountTransactions.get();
+                                                                        List<DocumentSnapshot>
+                                                                            documents =
+                                                                            snapshot.docs;
+                                                                        for (DocumentSnapshot document
+                                                                            in documents) {
+                                                                          await transaction.update(
                                                                               document.reference,
                                                                               {
-                                                                            'isActive':
-                                                                                true
-                                                                          });
-                                                                    }
-                                                                  });
+                                                                                'isActive': true
+                                                                              });
+                                                                        }
+                                                                      });
 
-                                                                  await accounts
-                                                                      .doc(
-                                                                          documentId)
-                                                                      .update({
-                                                                    'isActive':
-                                                                        true
-                                                                  });
-
-                                                                  await accounts
-                                                                      .doc(
-                                                                          documentId)
-                                                                      .update({
-                                                                    'updateDate':
-                                                                        DateTime
-                                                                            .now()
-                                                                  });
-                                                                  Navigator.pop(
-                                                                      context);
-                                                                },
-                                                              ),
-                                                              ListTile(
-                                                                leading: Icon(
-                                                                    Icons
-                                                                        .delete),
-                                                                title: Text(
-                                                                    'Delete'),
-                                                                onTap:
-                                                                    () async {
-                                                                  // do something
-                                                                  String
-                                                                      documentId =
-                                                                      document
-                                                                          .id;
-
-                                                                  Query userAccountTransactions = transactions
-                                                                      .where(
-                                                                          'accountID',
-                                                                          arrayContains:
+                                                                      await accounts
+                                                                          .doc(
                                                                               documentId)
-                                                                      .where(
-                                                                          'isActive',
-                                                                          isEqualTo:
-                                                                              true)
-                                                                      .orderBy(
-                                                                          'createDate',
-                                                                          descending:
-                                                                              true);
-                                                                  firestore
-                                                                      .runTransaction(
-                                                                          (transaction) async {
-                                                                    QuerySnapshot
-                                                                        snapshot =
-                                                                        await userAccountTransactions
-                                                                            .get();
-                                                                    List<DocumentSnapshot>
-                                                                        documents =
-                                                                        snapshot
-                                                                            .docs;
-                                                                    for (DocumentSnapshot document
-                                                                        in documents) {
-                                                                      await transaction
-                                                                          .delete(
-                                                                              document.reference);
-                                                                    }
-                                                                  });
+                                                                          .update({
+                                                                        'isActive':
+                                                                            true
+                                                                      });
 
-                                                                  await accounts
-                                                                      .doc(
-                                                                          documentId)
-                                                                      .delete();
-                                                                  Navigator.pop(
-                                                                      context);
-                                                                },
+                                                                      await accounts
+                                                                          .doc(
+                                                                              documentId)
+                                                                          .update({
+                                                                        'updateDate':
+                                                                            DateTime.now()
+                                                                      });
+                                                                      Navigator.pop(
+                                                                          context);
+                                                                    },
+                                                                  ),
+                                                                  ListTile(
+                                                                    leading: Icon(
+                                                                        Icons
+                                                                            .delete),
+                                                                    title: Text(
+                                                                        'Delete'),
+                                                                    onTap:
+                                                                        () async {
+                                                                      // do something
+                                                                      String
+                                                                          documentId =
+                                                                          document
+                                                                              .id;
+
+                                                                      Query userAccountTransactions = transactions
+                                                                          .where(
+                                                                              'accountID',
+                                                                              arrayContains:
+                                                                                  documentId)
+                                                                          .where(
+                                                                              'isActive',
+                                                                              isEqualTo:
+                                                                                  true)
+                                                                          .orderBy(
+                                                                              'createDate',
+                                                                              descending: true);
+                                                                      firestore
+                                                                          .runTransaction(
+                                                                              (transaction) async {
+                                                                        QuerySnapshot
+                                                                            snapshot =
+                                                                            await userAccountTransactions.get();
+                                                                        List<DocumentSnapshot>
+                                                                            documents =
+                                                                            snapshot.docs;
+                                                                        for (DocumentSnapshot document
+                                                                            in documents) {
+                                                                          await transaction
+                                                                              .delete(document.reference);
+                                                                        }
+                                                                      });
+
+                                                                      await accounts
+                                                                          .doc(
+                                                                              documentId)
+                                                                          .delete();
+                                                                      Navigator.pop(
+                                                                          context);
+                                                                    },
+                                                                  ),
+                                                                ],
                                                               ),
-                                                            ],
-                                                          ),
+                                                            );
+                                                          },
                                                         );
-                                                      },
-                                                    );
-                                                  });
-                                                },
+                                                      });
+                                                    },
+                                                  ),
+                                                ],
                                               ),
-                                            ],
-                                          ),
-                                        ),
-                                      );
+                                            ),
+                                          ));
                                     }).toList(),
                                   );
                                 } else {
-                                  return Text('No data available');
+                                  return Center(
+                                      child: CircularProgressIndicator());
                                 }
                               },
                             ),

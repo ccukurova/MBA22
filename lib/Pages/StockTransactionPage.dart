@@ -87,6 +87,7 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                     constraints: BoxConstraints(
                       maxWidth: 1000,
                     ),
+                    height: double.infinity,
                     child: SingleChildScrollView(
                       child: Padding(
                         padding: EdgeInsets.all(10.0),
@@ -267,6 +268,16 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                                             ),
                                             subtitle: Column(
                                               children: [
+                                                if (data['transactionDetail'] !=
+                                                    "")
+                                                  Text(data[
+                                                      'transactionDetail']),
+                                                if (data['categoryName'] != "")
+                                                  Text(
+                                                    '#${data['categoryName']}',
+                                                    style: TextStyle(
+                                                        color: Colors.blue),
+                                                  ),
                                                 if (data['createDate'] ==
                                                     data['updateDate'])
                                                   Text(
@@ -496,6 +507,18 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                                               if (data['period'] != 'Now')
                                                 Column(
                                                   children: [
+                                                    if (data[
+                                                            'transactionDetail'] !=
+                                                        "")
+                                                      Text(data[
+                                                          'transactionDetail']),
+                                                    if (data['categoryName'] !=
+                                                        "")
+                                                      Text(
+                                                        '#${data['categoryName']}',
+                                                        style: TextStyle(
+                                                            color: Colors.blue),
+                                                      ),
                                                     if (data['createDate'] ==
                                                         data['updateDate'])
                                                       Text(
@@ -527,7 +550,8 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                                     },
                                   );
                                 } else {
-                                  return Text('No data available');
+                                  return Center(
+                                      child: CircularProgressIndicator());
                                 }
                               },
                             ),

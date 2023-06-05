@@ -313,7 +313,8 @@ class _AccountsPage extends State<AccountsPage> {
                                     }).toList(),
                                   );
                                 } else {
-                                  return Text('No data available');
+                                  return Center(
+                                      child: CircularProgressIndicator());
                                 }
                               },
                             ),

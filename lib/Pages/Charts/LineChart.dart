@@ -22,7 +22,7 @@ class LineChartState extends State<LineChart> {
   @override
   Widget build(BuildContext context) {
     return Container(
-        width: MediaQuery.of(context).size.width,
+        constraints: BoxConstraints(maxWidth: 600),
         height: MediaQuery.of(context).size.height / 2,
         child: SfCartesianChart(
             // Initialize category axis

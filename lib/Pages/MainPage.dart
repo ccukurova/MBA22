@@ -123,7 +123,7 @@ class _MainPage extends State<MainPage> {
           CarouselSlider(
             carouselController: buttonCarouselController,
             options: CarouselOptions(
-              height: MediaQuery.of(context).size.height / 10 * 7,
+              height: MediaQuery.of(context).size.height / 10 * 6.5,
               initialPage: 0,
               enableInfiniteScroll: true,
               reverse: false,
@@ -260,7 +260,7 @@ class _MainPage extends State<MainPage> {
                 onPressed: () => buttonCarouselController.previousPage(
                     duration: Duration(milliseconds: 300),
                     curve: Curves.linear),
-                child: Text('←'),
+                child: Text('←', style: TextStyle(fontSize: 18)),
                 style: ElevatedButton.styleFrom(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(0.0),
@@ -271,7 +271,7 @@ class _MainPage extends State<MainPage> {
                 onPressed: () => buttonCarouselController.nextPage(
                     duration: Duration(milliseconds: 300),
                     curve: Curves.linear),
-                child: Text('→'),
+                child: Text('→', style: TextStyle(fontSize: 18)),
                 style: ElevatedButton.styleFrom(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(0.0),
@@ -292,7 +292,7 @@ class _MainPage extends State<MainPage> {
                           Text(
                             'Net:',
                             style: TextStyle(
-                              fontSize: 24.0,
+                              fontSize: 25,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -303,7 +303,7 @@ class _MainPage extends State<MainPage> {
                                 (sumOfRevenue - sumOfExpense)
                                     .toStringAsFixed(2),
                                 style: TextStyle(
-                                  fontSize: 24.0,
+                                  fontSize: 25,
                                   color: Colors.green,
                                 ),
                               ),
@@ -314,7 +314,7 @@ class _MainPage extends State<MainPage> {
                                 (sumOfRevenue - sumOfExpense)
                                     .toStringAsFixed(2),
                                 style: TextStyle(
-                                  fontSize: 24.0,
+                                  fontSize: 25,
                                   color: Colors.red,
                                 ),
                               ),
@@ -324,21 +324,21 @@ class _MainPage extends State<MainPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: <Widget>[
                             Row(children: [
                               Text(
                                 'Revenue:',
                                 style: TextStyle(
-                                  fontSize: 18.0,
+                                  fontSize: 16,
                                   color: Colors.grey[600],
                                 ),
                               ),
                               Text(
                                 sumOfRevenue.toStringAsFixed(2),
                                 style: TextStyle(
-                                  fontSize: 18.0,
+                                  fontSize: 16,
                                   color: Colors.green,
                                 ),
                               )
@@ -348,14 +348,14 @@ class _MainPage extends State<MainPage> {
                               Text(
                                 'Expense:',
                                 style: TextStyle(
-                                  fontSize: 18.0,
+                                  fontSize: 16,
                                   color: Colors.grey[600],
                                 ),
                               ),
                               Text(
                                 sumOfExpense.toStringAsFixed(2),
                                 style: TextStyle(
-                                  fontSize: 18.0,
+                                  fontSize: 16,
                                   color: Colors.red,
                                 ),
                               )
@@ -383,6 +383,7 @@ class _MainPage extends State<MainPage> {
           ),
           SizedBox(height: 30),
           showFutureTodos(),
+          SizedBox(height: 100),
         ]),
       ),
     );
@@ -392,7 +393,7 @@ class _MainPage extends State<MainPage> {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     CollectionReference transactions = firestore.collection('transactions');
     List<PieData> pieData = [];
-    Map<String, double> categoryList = {};
+    Map<String, num> categoryList = {};
     Query userTransactions = transactions
         .where('ledgerID', isEqualTo: ledgerID)
         .where('isActive', isEqualTo: true)
@@ -408,7 +409,7 @@ class _MainPage extends State<MainPage> {
                   doc['transactionType'] == 'Increase') &&
               doc['categoryName'] != '') {
             String categoryName = doc['categoryName'];
-            double total = doc['total'];
+            double total = doc['convertedTotal'].toDouble();
             categoryList[categoryName] =
                 (categoryList[categoryName] ?? 0) + total;
           }
@@ -433,7 +434,7 @@ class _MainPage extends State<MainPage> {
                   doc['transactionType'] == 'Decrease') &&
               doc['categoryName'] != '') {
             String categoryName = doc['categoryName'];
-            double total = doc['total'];
+            double total = doc['convertedTotal'].toDouble();
             categoryList[categoryName] =
                 (categoryList[categoryName] ?? 0) + total;
           }
@@ -836,7 +837,7 @@ class _MainPage extends State<MainPage> {
                                                       '+${data['total'].toStringAsFixed(2)} ${data['currencies'][0]}',
                                                       style: TextStyle(
                                                           color: Colors.green,
-                                                          fontSize: 20),
+                                                          fontSize: 16),
                                                       textAlign:
                                                           TextAlign.center,
                                                     ),
@@ -846,7 +847,7 @@ class _MainPage extends State<MainPage> {
                                                       '-${data['total'].toStringAsFixed(2)} ${data['currencies'][0]}',
                                                       style: TextStyle(
                                                           color: Colors.red,
-                                                          fontSize: 20),
+                                                          fontSize: 16),
                                                     ),
                                                   if (data['transactionType'] ==
                                                       'Income')
@@ -854,7 +855,7 @@ class _MainPage extends State<MainPage> {
                                                       '+${data['total'].toStringAsFixed(2)} ${data['currencies'][0]}',
                                                       style: TextStyle(
                                                           color: Colors.green,
-                                                          fontSize: 20),
+                                                          fontSize: 16),
                                                       textAlign:
                                                           TextAlign.center,
                                                     ),
@@ -864,7 +865,7 @@ class _MainPage extends State<MainPage> {
                                                       '-${data['total'].toStringAsFixed(2)} ${data['currencies'][0]}',
                                                       style: TextStyle(
                                                           color: Colors.red,
-                                                          fontSize: 20),
+                                                          fontSize: 16),
                                                     ),
                                                   if (data['totalAmount'] == 0)
                                                     Text(
@@ -879,6 +880,14 @@ class _MainPage extends State<MainPage> {
                                     subtitle: Column(
                                       children: [
                                         SizedBox(height: 10),
+                                        if (data['transactionDetail'] != "")
+                                          Text(data['transactionDetail']),
+                                        if (data['categoryName'] != "")
+                                          Text(
+                                            '#${data['categoryName']}',
+                                            style:
+                                                TextStyle(color: Colors.blue),
+                                          ),
                                         if (data['createDate'] ==
                                             data['updateDate'])
                                           Text(
@@ -932,7 +941,7 @@ class _MainPage extends State<MainPage> {
                                                 '+${data['total'].toStringAsFixed(2)} ${data['currencies'][0]}',
                                                 style: TextStyle(
                                                   color: Colors.green,
-                                                  fontSize: 20,
+                                                  fontSize: 16,
                                                 ),
                                               ),
                                             if (data['transactionType'] ==
@@ -941,14 +950,14 @@ class _MainPage extends State<MainPage> {
                                                 '-${data['total'].toStringAsFixed(2)} ${data['currencies'][0]}',
                                                 style: TextStyle(
                                                   color: Colors.red,
-                                                  fontSize: 20,
+                                                  fontSize: 16,
                                                 ),
                                               ),
                                             if (data['total'] == 0)
                                               Text(
                                                 data['total']
                                                     .toStringAsFixed(2),
-                                                style: TextStyle(fontSize: 20),
+                                                style: TextStyle(fontSize: 16),
                                               ),
                                           ],
                                         ),
@@ -998,6 +1007,13 @@ class _MainPage extends State<MainPage> {
                                           }
                                         },
                                       ),
+                                      if (data['transactionDetail'] != "")
+                                        Text(data['transactionDetail']),
+                                      if (data['categoryName'] != "")
+                                        Text(
+                                          '#${data['categoryName']}',
+                                          style: TextStyle(color: Colors.blue),
+                                        ),
                                       if (data['createDate'] ==
                                           data['updateDate'])
                                         Text(
@@ -1046,7 +1062,7 @@ class _MainPage extends State<MainPage> {
                                             '-${data['total'].toStringAsFixed(2)} ${data['currencies'][0]}',
                                             style: TextStyle(
                                               color: Colors.red,
-                                              fontSize: 20,
+                                              fontSize: 16,
                                             ),
                                           ),
                                         if (data['transactionType'] == 'Sell')
@@ -1054,13 +1070,13 @@ class _MainPage extends State<MainPage> {
                                             '+${data['total'].toStringAsFixed(2)} ${data['currencies'][0]}',
                                             style: TextStyle(
                                               color: Colors.green,
-                                              fontSize: 20,
+                                              fontSize: 16,
                                             ),
                                           ),
                                         if (data['total'] == 0)
                                           Text(
                                             data['total'].toStringAsFixed(2),
-                                            style: TextStyle(fontSize: 20),
+                                            style: TextStyle(fontSize: 16),
                                           ),
                                       ],
                                     ),
@@ -1109,6 +1125,13 @@ class _MainPage extends State<MainPage> {
                                       }
                                     },
                                   ),
+                                  if (data['transactionDetail'] != "")
+                                    Text(data['transactionDetail']),
+                                  if (data['categoryName'] != "")
+                                    Text(
+                                      '#${data['categoryName']}',
+                                      style: TextStyle(color: Colors.blue),
+                                    ),
                                   if (data['createDate'] == data['updateDate'])
                                     Text(
                                         'Created at ${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
@@ -1130,7 +1153,13 @@ class _MainPage extends State<MainPage> {
                         },
                       );
                     } else {
-                      return Text('No data available');
+                      return Center(
+                        child: Text(
+                          'No data available.',
+                          style: TextStyle(fontSize: 20, color: Colors.grey),
+                          textAlign: TextAlign.center,
+                        ),
+                      );
                     }
                   },
                 ),
@@ -1174,80 +1203,83 @@ class _MainPage extends State<MainPage> {
               maxHeight: 400,
             ),
             child: SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.all(10.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    StreamBuilder<QuerySnapshot>(
-                      stream: userNotes.snapshots(),
-                      builder: (BuildContext context,
-                          AsyncSnapshot<QuerySnapshot> snapshot) {
-                        if (snapshot.hasError) {
-                          return Text('Error: ${snapshot.error}');
-                        }
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  StreamBuilder<QuerySnapshot>(
+                    stream: userNotes.snapshots(),
+                    builder: (BuildContext context,
+                        AsyncSnapshot<QuerySnapshot> snapshot) {
+                      if (snapshot.hasError) {
+                        return Text('Error: ${snapshot.error}');
+                      }
 
-                        if (snapshot.hasData && snapshot.data != null) {
-                          return ListView.builder(
-                            shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
-                            itemCount: snapshot.data!.docs.length,
-                            itemBuilder: (BuildContext context, int index) {
-                              DocumentSnapshot document =
-                                  snapshot.data!.docs[index];
-                              Map<String, dynamic> data =
-                                  document.data() as Map<String, dynamic>;
-                              bool showIcons = false;
+                      if (snapshot.hasData && snapshot.data != null) {
+                        return ListView.builder(
+                          shrinkWrap: true,
+                          physics: NeverScrollableScrollPhysics(),
+                          itemCount: snapshot.data!.docs.length,
+                          itemBuilder: (BuildContext context, int index) {
+                            DocumentSnapshot document =
+                                snapshot.data!.docs[index];
+                            Map<String, dynamic> data =
+                                document.data() as Map<String, dynamic>;
+                            bool showIcons = false;
 
-                              if (data['noteType'] == 'To do')
-                                return InkWell(
-                                    onTap: () {},
-                                    child: Card(
-                                      child: ListTile(
-                                          contentPadding: EdgeInsets.only(
-                                              left: 10,
-                                              top: 20,
-                                              right: 10,
-                                              bottom: 0),
-                                          title: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Text(data['noteType']),
-                                                Text(data['heading']),
-                                              ]),
-                                          subtitle: Column(children: [
+                            if (data['noteType'] == 'To do')
+                              return InkWell(
+                                  onTap: () {},
+                                  child: Card(
+                                    child: ListTile(
+                                        contentPadding: EdgeInsets.only(
+                                            left: 10,
+                                            top: 20,
+                                            right: 10,
+                                            bottom: 0),
+                                        title: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(data['noteType']),
+                                              Text(data['heading']),
+                                            ]),
+                                        subtitle: Column(children: [
+                                          if (data['noteDetail'] != "")
                                             Text(data['noteDetail']),
-                                            if (data['createDate'] ==
-                                                data['updateDate'])
-                                              Text(
-                                                  'Created at ${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
-                                            SizedBox(height: 10),
-                                            if (data['createDate'] !=
-                                                data['updateDate'])
-                                              Text(
-                                                  'Updated at ${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())}'),
-                                            SizedBox(height: 10),
-                                            if (data['period'] != 'Now')
-                                              TargetDateBar(
-                                                  targetDate: data['targetDate']
-                                                      .toDate(),
-                                                  period: data['period'],
-                                                  duration: data['duration'],
-                                                  isDone: data['isDone']),
-                                            SizedBox(height: 10)
-                                          ])),
-                                    ));
-                            },
-                          );
-                        } else {
-                          return Text('No data available');
-                        }
-                      },
-                    ),
-                  ],
-                ),
+                                          if (data['createDate'] ==
+                                              data['updateDate'])
+                                            Text(
+                                                'Created at ${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
+                                          SizedBox(height: 10),
+                                          if (data['createDate'] !=
+                                              data['updateDate'])
+                                            Text(
+                                                'Updated at ${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())}'),
+                                          SizedBox(height: 10),
+                                          if (data['period'] != 'Now')
+                                            TargetDateBar(
+                                                targetDate:
+                                                    data['targetDate'].toDate(),
+                                                period: data['period'],
+                                                duration: data['duration'],
+                                                isDone: data['isDone']),
+                                          SizedBox(height: 10)
+                                        ])),
+                                  ));
+                          },
+                        );
+                      } else {
+                        return Center(
+                          child: Text(
+                            'No data available.',
+                            style: TextStyle(fontSize: 20, color: Colors.grey),
+                            textAlign: TextAlign.center,
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ],
               ),
             )));
   }
@@ -1306,7 +1338,7 @@ class _ExchangeRatesWidgetState extends State<ExchangeRatesWidget> {
         ),
         SizedBox(height: 16.0),
         Container(
-          width: MediaQuery.of(context).size.width,
+          constraints: BoxConstraints(maxWidth: 600),
           height: MediaQuery.of(context).size.height / 2,
           child: FutureBuilder<Map<String, dynamic>>(
             future: requester.requestAll(unit),

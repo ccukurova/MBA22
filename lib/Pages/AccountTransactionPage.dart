@@ -89,6 +89,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                 constraints: BoxConstraints(
                   maxWidth: 1000,
                 ),
+                height: double.infinity,
                 child: SingleChildScrollView(
                   child: Padding(
                     padding: EdgeInsets.all(10.0),
@@ -200,7 +201,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                                   .toStringAsFixed(
                                                                       2),
                                                               style: TextStyle(
-                                                                  fontSize: 16),
+                                                                  fontSize: 20),
                                                             ),
                                                         ])),
                                                 Expanded(
@@ -299,6 +300,16 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                             ),
                                             subtitle: Column(
                                               children: [
+                                                if (data['transactionDetail'] !=
+                                                    "")
+                                                  Text(data[
+                                                      'transactionDetail']),
+                                                if (data['categoryName'] != "")
+                                                  Text(
+                                                    '#${data['categoryName']}',
+                                                    style: TextStyle(
+                                                        color: Colors.blue),
+                                                  ),
                                                 if (data['createDate'] ==
                                                     data['updateDate'])
                                                   Text(
@@ -567,6 +578,15 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                   }
                                                 },
                                               ),
+                                              if (data['transactionDetail'] !=
+                                                  "")
+                                                Text(data['transactionDetail']),
+                                              if (data['categoryName'] != "")
+                                                Text(
+                                                  '#${data['categoryName']}',
+                                                  style: TextStyle(
+                                                      color: Colors.blue),
+                                                ),
                                               if (data['createDate'] ==
                                                   data['updateDate'])
                                                 Text(
@@ -607,7 +627,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                   child: Text(
                                                     '${data['transactionType']}',
                                                     style:
-                                                        TextStyle(fontSize: 16),
+                                                        TextStyle(fontSize: 14),
                                                   ),
                                                   flex: 2),
                                               FutureBuilder<DocumentSnapshot>(
@@ -848,6 +868,15 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                   }
                                                 },
                                               ),
+                                              if (data['transactionDetail'] !=
+                                                  "")
+                                                Text(data['transactionDetail']),
+                                              if (data['categoryName'] != "")
+                                                Text(
+                                                  '#${data['categoryName']}',
+                                                  style: TextStyle(
+                                                      color: Colors.blue),
+                                                ),
                                               if (data['createDate'] ==
                                                   data['updateDate'])
                                                 Text(
@@ -873,7 +902,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                 },
                               );
                             } else {
-                              return Text('No data available');
+                              return Center(child: CircularProgressIndicator());
                             }
                           },
                         ),

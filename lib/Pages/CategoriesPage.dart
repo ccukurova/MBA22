@@ -83,135 +83,168 @@ class CategoriesPageState extends State<CategoriesPage> {
           title: Text('Categories'),
         ),
         body: Stack(children: [
-          SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  StreamBuilder<QuerySnapshot>(
-                    stream: userCategories.snapshots(),
-                    builder: (BuildContext context,
-                        AsyncSnapshot<QuerySnapshot> snapshot) {
-                      if (snapshot.hasError) {
-                        return Text('Error: ${snapshot.error}');
-                      }
+          Center(
+              child: Padding(
+                  padding:
+                      EdgeInsets.only(left: 10, top: 0, right: 10, bottom: 0),
+                  child: Container(
+                      constraints: BoxConstraints(
+                        maxWidth: 600,
+                      ),
+                      child: SingleChildScrollView(
+                        child: Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              StreamBuilder<QuerySnapshot>(
+                                stream: userCategories.snapshots(),
+                                builder: (BuildContext context,
+                                    AsyncSnapshot<QuerySnapshot> snapshot) {
+                                  if (snapshot.hasError) {
+                                    return Text('Error: ${snapshot.error}');
+                                  }
 
-                      if (snapshot.hasData && snapshot.data != null) {
-                        List<DocumentSnapshot> documents = snapshot.data!.docs;
-                        List<String> additionalCategories = [
-                          'Dues',
-                          'Rent',
-                          'Salary',
-                          'Health',
-                          'Bills',
-                          'Transportation',
-                          'Tax',
-                          'Food',
-                          'Entertainment'
-                        ];
+                                  if (snapshot.hasData &&
+                                      snapshot.data != null) {
+                                    List<DocumentSnapshot> documents =
+                                        snapshot.data!.docs;
+                                    List<String> additionalCategories = [
+                                      'Dues',
+                                      'Rent',
+                                      'Salary',
+                                      'Health',
+                                      'Bills',
+                                      'Transportation',
+                                      'Tax',
+                                      'Food',
+                                      'Entertainment'
+                                    ];
 
-                        List<Map<String, dynamic>> data =
-                            documents.map((DocumentSnapshot document) {
-                          return document.data() as Map<String, dynamic>;
-                        }).toList();
+                                    List<Map<String, dynamic>> data = documents
+                                        .map((DocumentSnapshot document) {
+                                      return document.data()
+                                          as Map<String, dynamic>;
+                                    }).toList();
 
-                        // Add additional categories to the data list
-                        additionalCategories.forEach((category) {
-                          data.add({'categoryName': category});
-                        });
+                                    // Add additional categories to the data list
+                                    additionalCategories.forEach((category) {
+                                      data.add({'categoryName': category});
+                                    });
 
-                        return ListView.builder(
-                          shrinkWrap: true,
-                          physics: NeverScrollableScrollPhysics(),
-                          itemCount: data.length,
-                          itemBuilder: (BuildContext context, int index) {
-                            Map<String, dynamic> category = data[index];
+                                    return ListView.builder(
+                                      shrinkWrap: true,
+                                      physics: NeverScrollableScrollPhysics(),
+                                      itemCount: data.length,
+                                      itemBuilder:
+                                          (BuildContext context, int index) {
+                                        Map<String, dynamic> category =
+                                            data[index];
 
-                            // Determine if IconButton should be displayed
-                            bool canEdit = documents.isNotEmpty &&
-                                index < documents.length;
+                                        // Determine if IconButton should be displayed
+                                        bool canEdit = documents.isNotEmpty &&
+                                            index < documents.length;
 
-                            return InkWell(
-                              onTap: () {
-                                setChoosenCategory(category['categoryName']);
-                                widget.onUpdate!(category['categoryName']);
-                              },
-                              child: ListTile(
-                                title: Text(category['categoryName']),
-                                trailing: canEdit
-                                    ? Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          IconButton(
-                                            icon: Icon(Icons.edit),
-                                            onPressed: () {
-                                              showCategoryUpdaterDialog(
-                                                  context, documents[index]);
-                                            },
-                                          ),
-                                          IconButton(
-                                            icon: Icon(Icons.delete),
-                                            onPressed: () async {
-                                              showDialog(
-                                                context: context,
-                                                builder:
-                                                    (BuildContext context) {
-                                                  return AlertDialog(
-                                                    title: Text('Delete'),
-                                                    content: Text(
-                                                        'Are you sure you want to delete?'),
-                                                    actions: <Widget>[
-                                                      TextButton(
-                                                        child: Text('Cancel'),
+                                        return InkWell(
+                                          onTap: () {
+                                            setChoosenCategory(
+                                                category['categoryName']);
+                                            widget.onUpdate!(
+                                                category['categoryName']);
+                                          },
+                                          child: Card(
+                                              child: ListTile(
+                                            title:
+                                                Text(category['categoryName']),
+                                            trailing: canEdit
+                                                ? Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      IconButton(
+                                                        icon: Icon(Icons.edit),
                                                         onPressed: () {
-                                                          Navigator.of(context)
-                                                              .pop();
+                                                          showCategoryUpdaterDialog(
+                                                              context,
+                                                              documents[index]);
                                                         },
                                                       ),
-                                                      TextButton(
-                                                        child: Text('Delete'),
+                                                      IconButton(
+                                                        icon:
+                                                            Icon(Icons.delete),
                                                         onPressed: () async {
-                                                          String documentId =
-                                                              documents[index]
-                                                                  .id;
-                                                          await categories
-                                                              .doc(documentId)
-                                                              .update({
-                                                            'isActive': false
-                                                          });
-                                                          await categories
-                                                              .doc(documentId)
-                                                              .update({
-                                                            'updateDate':
-                                                                DateTime.now()
-                                                          });
-                                                          Navigator.pop(
-                                                              context);
+                                                          showDialog(
+                                                            context: context,
+                                                            builder:
+                                                                (BuildContext
+                                                                    context) {
+                                                              return AlertDialog(
+                                                                title: Text(
+                                                                    'Delete'),
+                                                                content: Text(
+                                                                    'Are you sure you want to delete?'),
+                                                                actions: <
+                                                                    Widget>[
+                                                                  TextButton(
+                                                                    child: Text(
+                                                                        'Cancel'),
+                                                                    onPressed:
+                                                                        () {
+                                                                      Navigator.of(
+                                                                              context)
+                                                                          .pop();
+                                                                    },
+                                                                  ),
+                                                                  TextButton(
+                                                                    child: Text(
+                                                                        'Delete'),
+                                                                    onPressed:
+                                                                        () async {
+                                                                      String
+                                                                          documentId =
+                                                                          documents[index]
+                                                                              .id;
+                                                                      await categories
+                                                                          .doc(
+                                                                              documentId)
+                                                                          .update({
+                                                                        'isActive':
+                                                                            false
+                                                                      });
+                                                                      await categories
+                                                                          .doc(
+                                                                              documentId)
+                                                                          .update({
+                                                                        'updateDate':
+                                                                            DateTime.now()
+                                                                      });
+                                                                      Navigator.pop(
+                                                                          context);
+                                                                    },
+                                                                  ),
+                                                                ],
+                                                              );
+                                                            },
+                                                          );
                                                         },
                                                       ),
                                                     ],
-                                                  );
-                                                },
-                                              );
-                                            },
-                                          ),
-                                        ],
-                                      )
-                                    : null,
-                              ),
-                            );
-                          },
-                        );
-                      } else {
-                        return Text('No data available');
-                      }
-                    },
-                  )
-                ],
-              ),
-            ),
-          ),
+                                                  )
+                                                : null,
+                                          )),
+                                        );
+                                      },
+                                    );
+                                  } else {
+                                    return Center(
+                                        child: CircularProgressIndicator());
+                                  }
+                                },
+                              )
+                            ],
+                          ),
+                        ),
+                      )))),
           Align(
             alignment: Alignment.bottomRight,
             child: Padding(

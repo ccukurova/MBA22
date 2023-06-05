@@ -45,7 +45,7 @@ class LoginPageState extends State<LoginPage> {
         ),
         body: Center(
             child: Container(
-          width: 400,
+          constraints: BoxConstraints(maxWidth: 300),
           height: double.infinity,
           child: Form(
             key: _formKey,
@@ -133,16 +133,6 @@ class LoginPageState extends State<LoginPage> {
                     ),
                   ],
                 ),
-                SizedBox(
-                  height: 16,
-                ),
-                TextButton(
-                  onPressed: () {
-                    // Add your code here to handle the click event
-                    print('Forgot password clicked!');
-                  },
-                  child: Text('Forgot my password'),
-                )
               ],
             ),
           ),

@@ -210,7 +210,8 @@ class StockPageState extends State<StockPage> {
                                     },
                                   );
                                 } else {
-                                  return Text('No data available');
+                                  return Center(
+                                      child: CircularProgressIndicator());
                                 }
                               },
                             ),

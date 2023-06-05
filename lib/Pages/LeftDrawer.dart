@@ -55,14 +55,18 @@ class _LeftDrawerState extends State<LeftDrawer> {
             },
           ),
           ListTile(
-            title: Text('My ledgers'),
+            title: Row(
+              children: [Icon(Icons.book), Text('My ledgers')],
+            ),
             onTap: () {
               Navigator.push(context,
                   MaterialPageRoute(builder: (context) => LedgerPage()));
             },
           ),
           ListTile(
-            title: Text('Accounts'),
+            title: Row(
+              children: [Icon(Icons.account_box), Text('Accounts')],
+            ),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context,
@@ -70,41 +74,45 @@ class _LeftDrawerState extends State<LeftDrawer> {
             },
           ),
           ListTile(
-            title: Text('Stocks'),
+            title: Row(
+              children: [Icon(Icons.shelves), Text('Stocks')],
+            ),
             onTap: () {
               Navigator.push(context,
                   MaterialPageRoute(builder: (context) => StockPage()));
             },
           ),
           ListTile(
-            title: Text('Notes & To-do'),
+            title: Row(
+              children: [Icon(Icons.check_box), Text('Notes & To-do')],
+            ),
             onTap: () {
               Navigator.push(
                   context, MaterialPageRoute(builder: (context) => NotePage()));
             },
           ),
           ListTile(
-            title: Text('Archive'),
+            title: Row(
+              children: [Icon(Icons.archive), Text('Archive')],
+            ),
             onTap: () {
               Navigator.push(context,
                   MaterialPageRoute(builder: (context) => ArchivePage()));
             },
           ),
           ListTile(
-            title: Text('Categories'),
+            title: Row(
+              children: [Icon(Icons.tag), Text('Categories')],
+            ),
             onTap: () {
               Navigator.push(context,
                   MaterialPageRoute(builder: (context) => CategoriesPage()));
             },
           ),
           ListTile(
-            title: Text('Options'),
-            onTap: () {
-              // Do something when the user taps on this ListTile
-            },
-          ),
-          ListTile(
-              title: Text('Exit'),
+              title: Row(
+                children: [Icon(Icons.exit_to_app), Text('Exit')],
+              ),
               onTap: () {
                 signOutUser();
               }),
