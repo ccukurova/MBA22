@@ -22,8 +22,8 @@ class LineChartState extends State<LineChart> {
   @override
   Widget build(BuildContext context) {
     return Container(
-        width: 500,
-        height: 500,
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height / 2,
         child: SfCartesianChart(
             // Initialize category axis
             title: ChartTitle(text: 'Profit'),

@@ -19,8 +19,8 @@ class PieChartState extends State<PieChart> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 500,
-      height: 500,
+      width: MediaQuery.of(context).size.width,
+      height: MediaQuery.of(context).size.height / 2,
       child: SfCircularChart(series: <PieSeries<PieData, String>>[
         PieSeries<PieData, String>(
             explode: true,

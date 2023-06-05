@@ -15,6 +15,8 @@ class TargetDateBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String durationText;
+    if (duration == 0) {}
     return Container(
       constraints: BoxConstraints(maxWidth: 300),
       padding: EdgeInsets.only(left: 10, top: 5, right: 10, bottom: 5),
@@ -34,7 +36,7 @@ class TargetDateBar extends StatelessWidget {
           ),
           SizedBox(width: 4.0),
           Text(
-            '${DateFormat('dd-MM-yyyy – kk:mm').format(this.targetDate.toLocal())} / ${this.period} x${this.duration}',
+            '${DateFormat('dd-MM-yyyy – kk:mm').format(this.targetDate.toLocal())} / ${this.period} x ${this.duration < 0 ? '∞' : this.duration}',
             style: TextStyle(color: Colors.white, fontSize: 14),
           ),
         ],

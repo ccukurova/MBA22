@@ -110,9 +110,9 @@ class ArchiveTransactionPageState extends State<ArchiveTransactionPage> {
                                       Expanded(
                                           child: Text(data['transactionType'],
                                               style: TextStyle(fontSize: 14)),
-                                          flex: 2),
+                                          flex: 4),
                                       Expanded(
-                                          flex: 6,
+                                          flex: 13,
                                           child: Row(
                                               mainAxisAlignment:
                                                   MainAxisAlignment.center,
@@ -159,12 +159,32 @@ class ArchiveTransactionPageState extends State<ArchiveTransactionPage> {
                                                         TextStyle(fontSize: 16),
                                                   ),
                                               ])),
+                                      Expanded(child: SizedBox(), flex: 2),
+                                      Expanded(
+                                          child: IconButton(
+                                            icon: Icon(Icons.delete),
+                                            onPressed: () async {
+                                              // do something
+                                              String documentId = document.id;
+                                              await stockTransactions
+                                                  .doc(documentId)
+                                                  .delete();
+                                            },
+                                          ),
+                                          flex: 2)
                                     ],
                                   ),
                                   subtitle: Column(
                                     children: [
-                                      Text(
-                                          '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
+                                      SizedBox(height: 10),
+                                      if (data['createDate'] ==
+                                          data['updateDate'])
+                                        Text(
+                                            'Created at ${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
+                                      if (data['createDate'] !=
+                                          data['updateDate'])
+                                        Text(
+                                            'Updated at ${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())}'),
                                       SizedBox(height: 10),
                                       if (data['period'] != 'Now')
                                         Container(
@@ -293,6 +313,18 @@ class ArchiveTransactionPageState extends State<ArchiveTransactionPage> {
                                         }
                                       },
                                     ),
+                                    Expanded(
+                                        child: IconButton(
+                                          icon: Icon(Icons.delete),
+                                          onPressed: () async {
+                                            // do something
+                                            String documentId = document.id;
+                                            await stockTransactions
+                                                .doc(documentId)
+                                                .delete();
+                                          },
+                                        ),
+                                        flex: 2)
                                   ]),
                                   subtitle: Column(children: [
                                     FutureBuilder<List<String>>(
@@ -336,8 +368,15 @@ class ArchiveTransactionPageState extends State<ArchiveTransactionPage> {
                                         }
                                       },
                                     ),
-                                    Text(
-                                        '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
+                                    SizedBox(height: 10),
+                                    if (data['createDate'] ==
+                                        data['updateDate'])
+                                      Text(
+                                          'Created at ${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
+                                    if (data['createDate'] !=
+                                        data['updateDate'])
+                                      Text(
+                                          'Updated at ${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())}'),
                                     SizedBox(height: 10),
                                     if (data['period'] != 'Now')
                                       Container(
@@ -466,63 +505,16 @@ class ArchiveTransactionPageState extends State<ArchiveTransactionPage> {
                                     ),
                                     Expanded(
                                         child: IconButton(
-                                          icon: Icon(Icons.more_vert),
-                                          onPressed: () {
-                                            setState(() {
-                                              showModalBottomSheet(
-                                                context: context,
-                                                builder:
-                                                    (BuildContext context) {
-                                                  return Container(
-                                                    child: Column(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: <Widget>[
-                                                        ListTile(
-                                                          leading:
-                                                              Icon(Icons.edit),
-                                                          title: Text('Update'),
-                                                          onTap: () {
-                                                            // do something
-                                                            Navigator.pop(
-                                                                context);
-                                                            // showStockTransactionUpdaterDialog(
-                                                            //     context,
-                                                            //     document);
-                                                          },
-                                                        ),
-                                                        ListTile(
-                                                          leading: Icon(
-                                                              Icons.delete),
-                                                          title: Text('Delete'),
-                                                          onTap: () async {
-                                                            // do something
-                                                            String documentId =
-                                                                document.id;
-                                                            await stockTransactions
-                                                                .doc(documentId)
-                                                                .update({
-                                                              'isActive': false
-                                                            });
-                                                            await stockTransactions
-                                                                .doc(documentId)
-                                                                .update({
-                                                              'updateDate':
-                                                                  DateTime.now()
-                                                            });
-                                                            Navigator.pop(
-                                                                context);
-                                                          },
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  );
-                                                },
-                                              );
-                                            });
+                                          icon: Icon(Icons.delete),
+                                          onPressed: () async {
+                                            // do something
+                                            String documentId = document.id;
+                                            await stockTransactions
+                                                .doc(documentId)
+                                                .delete();
                                           },
                                         ),
-                                        flex: 2),
+                                        flex: 2)
                                   ]),
                                   subtitle: Column(children: [
                                     if (data['currencies'][0] !=
@@ -578,8 +570,15 @@ class ArchiveTransactionPageState extends State<ArchiveTransactionPage> {
                                         }
                                       },
                                     ),
-                                    Text(
-                                        '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
+                                    SizedBox(height: 10),
+                                    if (data['createDate'] ==
+                                        data['updateDate'])
+                                      Text(
+                                          'Created at ${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
+                                    if (data['createDate'] !=
+                                        data['updateDate'])
+                                      Text(
+                                          'Updated at ${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())}'),
                                     SizedBox(height: 10),
                                     if (data['period'] != 'Now')
                                       Container(

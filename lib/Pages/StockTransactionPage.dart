@@ -79,345 +79,463 @@ class StockTransactionPageState extends State<StockTransactionPage> {
       ),
       body: Stack(
         children: [
-          SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.all(10.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  StreamBuilder<QuerySnapshot>(
-                    stream: userStockTransactions.snapshots(),
-                    builder: (BuildContext context,
-                        AsyncSnapshot<QuerySnapshot> snapshot) {
-                      if (snapshot.hasError) {
-                        return Text('Error: ${snapshot.error}');
-                      }
+          Center(
+              child: Padding(
+                  padding:
+                      EdgeInsets.only(left: 10, top: 0, right: 10, bottom: 0),
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxWidth: 1000,
+                    ),
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: EdgeInsets.all(10.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            StreamBuilder<QuerySnapshot>(
+                              stream: userStockTransactions.snapshots(),
+                              builder: (BuildContext context,
+                                  AsyncSnapshot<QuerySnapshot> snapshot) {
+                                if (snapshot.hasError) {
+                                  return Text('Error: ${snapshot.error}');
+                                }
 
-                      if (snapshot.hasData && snapshot.data != null) {
-                        return ListView.builder(
-                          shrinkWrap: true,
-                          physics: NeverScrollableScrollPhysics(),
-                          itemCount: snapshot.data!.docs.length,
-                          itemBuilder: (BuildContext context, int index) {
-                            DocumentSnapshot document =
-                                snapshot.data!.docs[index];
-                            Map<String, dynamic> data =
-                                document.data() as Map<String, dynamic>;
-                            bool showIcons = false;
-                            if (data['transactionType'] == 'Add' ||
-                                data['transactionType'] == 'Subtract') {
-                              return InkWell(
-                                onTap: () {
-                                  // Go to transaction details
-                                },
-                                child: ListTile(
-                                  title: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Expanded(
-                                          child: Text(data['transactionType'],
-                                              style: TextStyle(fontSize: 14)),
-                                          flex: 2),
-                                      Expanded(
-                                          flex: 6,
-                                          child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
+                                if (snapshot.hasData && snapshot.data != null) {
+                                  return ListView.builder(
+                                    shrinkWrap: true,
+                                    physics: NeverScrollableScrollPhysics(),
+                                    itemCount: snapshot.data!.docs.length,
+                                    itemBuilder:
+                                        (BuildContext context, int index) {
+                                      DocumentSnapshot document =
+                                          snapshot.data!.docs[index];
+                                      Map<String, dynamic> data = document
+                                          .data() as Map<String, dynamic>;
+                                      bool showIcons = false;
+                                      if (data['transactionType'] == 'Add' ||
+                                          data['transactionType'] ==
+                                              'Subtract') {
+                                        return InkWell(
+                                          onTap: () {
+                                            // Go to transaction details
+                                          },
+                                          child: Card(
+                                              child: ListTile(
+                                            contentPadding: EdgeInsets.only(
+                                                left: 10,
+                                                top: 20,
+                                                right: 10,
+                                                bottom: 0),
+                                            title: Row(
+                                              mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                if (data['transactionType'] ==
-                                                    'Add')
-                                                  Text(
-                                                    '+${data['amount'].toStringAsFixed(2)}',
-                                                    style: TextStyle(
-                                                        color: Colors.green,
-                                                        fontSize: 20),
+                                                Expanded(
+                                                    child: Text(
+                                                        data['transactionType'],
+                                                        style: TextStyle(
+                                                            fontSize: 14)),
+                                                    flex: 2),
+                                                Expanded(
+                                                    flex: 6,
+                                                    child: Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        children: [
+                                                          if (data[
+                                                                  'transactionType'] ==
+                                                              'Add')
+                                                            Text(
+                                                              '+${data['amount'].toStringAsFixed(2)}',
+                                                              style: TextStyle(
+                                                                  color: Colors
+                                                                      .green,
+                                                                  fontSize: 20),
+                                                            ),
+                                                          if (data[
+                                                                  'transactionType'] ==
+                                                              'Subtract')
+                                                            Text(
+                                                              '-${data['amount'].toStringAsFixed(2)}',
+                                                              style: TextStyle(
+                                                                  color: Colors
+                                                                      .red,
+                                                                  fontSize: 20),
+                                                            ),
+                                                          if (data[
+                                                                  'totalAmount'] ==
+                                                              0)
+                                                            Text(
+                                                              data['totalAmount']
+                                                                  .toStringAsFixed(
+                                                                      2),
+                                                              style: TextStyle(
+                                                                  fontSize: 16),
+                                                            ),
+                                                        ])),
+                                                Expanded(
+                                                  flex: 2,
+                                                  child: IconButton(
+                                                    icon: Icon(Icons.more_vert),
+                                                    onPressed: () {
+                                                      setState(() {
+                                                        showModalBottomSheet(
+                                                          context: context,
+                                                          builder: (BuildContext
+                                                              context) {
+                                                            return Container(
+                                                              child: Column(
+                                                                mainAxisSize:
+                                                                    MainAxisSize
+                                                                        .min,
+                                                                children: <
+                                                                    Widget>[
+                                                                  ListTile(
+                                                                    contentPadding: EdgeInsets.only(
+                                                                        left:
+                                                                            10,
+                                                                        top: 20,
+                                                                        right:
+                                                                            10,
+                                                                        bottom:
+                                                                            0),
+                                                                    leading: Icon(
+                                                                        Icons
+                                                                            .edit),
+                                                                    title: Text(
+                                                                        'Update'),
+                                                                    onTap: () {
+                                                                      // do something
+                                                                      Navigator.pop(
+                                                                          context);
+                                                                      showStockTransactionAdderDialog(
+                                                                          context,
+                                                                          document:
+                                                                              document);
+                                                                    },
+                                                                  ),
+                                                                  ListTile(
+                                                                    contentPadding: EdgeInsets.only(
+                                                                        left:
+                                                                            10,
+                                                                        top: 20,
+                                                                        right:
+                                                                            10,
+                                                                        bottom:
+                                                                            0),
+                                                                    leading: Icon(
+                                                                        Icons
+                                                                            .delete),
+                                                                    title: Text(
+                                                                        'Delete'),
+                                                                    onTap:
+                                                                        () async {
+                                                                      // do something
+                                                                      String
+                                                                          documentId =
+                                                                          document
+                                                                              .id;
+                                                                      await stockTransactions
+                                                                          .doc(
+                                                                              documentId)
+                                                                          .update({
+                                                                        'isActive':
+                                                                            false
+                                                                      });
+                                                                      await stockTransactions
+                                                                          .doc(
+                                                                              documentId)
+                                                                          .update({
+                                                                        'updateDate':
+                                                                            DateTime.now()
+                                                                      });
+                                                                      Navigator.pop(
+                                                                          context);
+                                                                    },
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            );
+                                                          },
+                                                        );
+                                                      });
+                                                    },
                                                   ),
-                                                if (data['transactionType'] ==
-                                                    'Subtract')
+                                                )
+                                              ],
+                                            ),
+                                            subtitle: Column(
+                                              children: [
+                                                if (data['createDate'] ==
+                                                    data['updateDate'])
                                                   Text(
-                                                    '-${data['amount'].toStringAsFixed(2)}',
-                                                    style: TextStyle(
-                                                        color: Colors.red,
-                                                        fontSize: 20),
-                                                  ),
-                                                if (data['totalAmount'] == 0)
+                                                      'Created at ${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
+                                                if (data['createDate'] !=
+                                                    data['updateDate'])
                                                   Text(
-                                                    data['totalAmount']
-                                                        .toStringAsFixed(2),
+                                                      'Updated at ${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())}'),
+                                                SizedBox(height: 10),
+                                                if (data['period'] != 'Now')
+                                                  TargetDateBar(
+                                                      targetDate:
+                                                          data['targetDate']
+                                                              .toDate(),
+                                                      period: data['period'],
+                                                      duration:
+                                                          data['duration'],
+                                                      isDone: data['isDone']),
+                                                SizedBox(height: 10)
+                                              ],
+                                            ),
+                                          )),
+                                        );
+                                      }
+                                      if (data['transactionType'] == 'Buy' ||
+                                          data['transactionType'] == 'Sell') {
+                                        return InkWell(
+                                          onTap: () {
+                                            // Go to transaction details
+                                          },
+                                          child: Card(
+                                              child: ListTile(
+                                            contentPadding: EdgeInsets.only(
+                                                left: 10,
+                                                top: 20,
+                                                right: 10,
+                                                bottom: 0),
+                                            title: Row(children: [
+                                              Expanded(
+                                                  child: Text(
+                                                    '${data['transactionType']}',
                                                     style:
-                                                        TextStyle(fontSize: 16),
+                                                        TextStyle(fontSize: 14),
                                                   ),
-                                              ])),
-                                      Expanded(
-                                        flex: 2,
-                                        child: IconButton(
-                                          icon: Icon(Icons.more_vert),
-                                          onPressed: () {
-                                            setState(() {
-                                              showModalBottomSheet(
-                                                context: context,
-                                                builder:
-                                                    (BuildContext context) {
-                                                  return Container(
-                                                    child: Column(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: <Widget>[
-                                                        ListTile(
-                                                          leading:
-                                                              Icon(Icons.edit),
-                                                          title: Text('Update'),
-                                                          onTap: () {
-                                                            // do something
-                                                            Navigator.pop(
-                                                                context);
-                                                            showStockTransactionAdderDialog(
-                                                                context,
-                                                                document:
-                                                                    document);
+                                                  flex: 2),
+                                              Expanded(
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    if (data[
+                                                            'transactionType'] ==
+                                                        'Buy')
+                                                      Text(
+                                                        '+${data['amount'].toString()} ',
+                                                        style: TextStyle(
+                                                            color: Colors.green,
+                                                            fontSize: 20),
+                                                      ),
+                                                    if (data[
+                                                            'transactionType'] ==
+                                                        'Sell')
+                                                      Text(
+                                                        '-${data['amount'].toString()}',
+                                                        style: TextStyle(
+                                                            color: Colors.red,
+                                                            fontSize: 20),
+                                                      ),
+                                                    if (data['amount'] == 0)
+                                                      Text(
+                                                        data['amount']
+                                                            .toString(),
+                                                        style: TextStyle(
+                                                            fontSize: 20),
+                                                      ),
+                                                  ],
+                                                ),
+                                                flex: 6,
+                                              ),
+                                              Expanded(
+                                                  child: IconButton(
+                                                    icon: Icon(Icons.more_vert),
+                                                    onPressed: () {
+                                                      setState(() {
+                                                        showModalBottomSheet(
+                                                          context: context,
+                                                          builder: (BuildContext
+                                                              context) {
+                                                            return Container(
+                                                              child: Column(
+                                                                mainAxisSize:
+                                                                    MainAxisSize
+                                                                        .min,
+                                                                children: <
+                                                                    Widget>[
+                                                                  ListTile(
+                                                                    contentPadding: EdgeInsets.only(
+                                                                        left:
+                                                                            10,
+                                                                        top: 20,
+                                                                        right:
+                                                                            10,
+                                                                        bottom:
+                                                                            0),
+                                                                    leading: Icon(
+                                                                        Icons
+                                                                            .edit),
+                                                                    title: Text(
+                                                                        'Update'),
+                                                                    onTap: () {
+                                                                      // do something
+                                                                      Navigator.pop(
+                                                                          context);
+                                                                      showStockTransactionAdderDialog(
+                                                                          context,
+                                                                          document:
+                                                                              document);
+                                                                    },
+                                                                  ),
+                                                                  ListTile(
+                                                                    contentPadding: EdgeInsets.only(
+                                                                        left:
+                                                                            10,
+                                                                        top: 20,
+                                                                        right:
+                                                                            10,
+                                                                        bottom:
+                                                                            0),
+                                                                    leading: Icon(
+                                                                        Icons
+                                                                            .delete),
+                                                                    title: Text(
+                                                                        'Delete'),
+                                                                    onTap:
+                                                                        () async {
+                                                                      // do something
+                                                                      String
+                                                                          documentId =
+                                                                          document
+                                                                              .id;
+                                                                      await stockTransactions
+                                                                          .doc(
+                                                                              documentId)
+                                                                          .update({
+                                                                        'isActive':
+                                                                            false
+                                                                      });
+                                                                      await stockTransactions
+                                                                          .doc(
+                                                                              documentId)
+                                                                          .update({
+                                                                        'updateDate':
+                                                                            DateTime.now()
+                                                                      });
+                                                                      Navigator.pop(
+                                                                          context);
+                                                                    },
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            );
                                                           },
-                                                        ),
-                                                        ListTile(
-                                                          leading: Icon(
-                                                              Icons.delete),
-                                                          title: Text('Delete'),
-                                                          onTap: () async {
-                                                            // do something
-                                                            String documentId =
-                                                                document.id;
-                                                            await stockTransactions
-                                                                .doc(documentId)
-                                                                .update({
-                                                              'isActive': false
-                                                            });
-                                                            await stockTransactions
-                                                                .doc(documentId)
-                                                                .update({
-                                                              'updateDate':
-                                                                  DateTime.now()
-                                                            });
-                                                            Navigator.pop(
-                                                                context);
-                                                          },
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  );
+                                                        );
+                                                      });
+                                                    },
+                                                  ),
+                                                  flex: 2),
+                                            ]),
+                                            subtitle: Column(children: [
+                                              if (data['currencies'][0] !=
+                                                  data['currencies'][1])
+                                                Text(
+                                                  '${data['amount']}x${data['price'].toStringAsFixed(2)}=${data['total'].toStringAsFixed(2)} ${data['currencies'][0]} (${data['convertedTotal']} ${data['currencies'][1]})',
+                                                  style:
+                                                      TextStyle(fontSize: 12),
+                                                ),
+                                              if (data['currencies'][0] ==
+                                                  data['currencies'][1])
+                                                Text(
+                                                  '${data['amount']}x${data['price'].toStringAsFixed(2)}=${data['total'].toStringAsFixed(2)} ${data['currencies'][0]}',
+                                                  style:
+                                                      TextStyle(fontSize: 12),
+                                                ),
+                                              FutureBuilder<List<String>>(
+                                                future: Future.wait([
+                                                  getAccountNameByID(
+                                                      data['accountID'][1]),
+                                                  getAccountNameByID(
+                                                      data['accountID'][0]),
+                                                ]),
+                                                builder: (BuildContext context,
+                                                    AsyncSnapshot<List<String>>
+                                                        snapshot) {
+                                                  if (snapshot
+                                                          .connectionState ==
+                                                      ConnectionState.done) {
+                                                    if (snapshot.hasData) {
+                                                      final sourceAccountName =
+                                                          snapshot.data![0];
+                                                      final accountName =
+                                                          snapshot.data![1];
+                                                      String arrow = "-";
+
+                                                      if (data['transactionType'] ==
+                                                              'Buy' ||
+                                                          data['transactionType'] ==
+                                                              'Payment')
+                                                        arrow = '\u2192';
+
+                                                      if (data['transactionType'] ==
+                                                              'Sell' ||
+                                                          data['transactionType'] ==
+                                                              'Collection')
+                                                        arrow = '\u2190';
+
+                                                      return Text(
+                                                          '$sourceAccountName $arrow $accountName');
+                                                    } else {
+                                                      return Text(
+                                                          'Error: ${snapshot.error}');
+                                                    }
+                                                  } else {
+                                                    return CircularProgressIndicator();
+                                                  }
                                                 },
-                                              );
-                                            });
-                                          },
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                  subtitle: Column(
-                                    children: [
-                                      Text(
-                                          '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
-                                      SizedBox(height: 10),
-                                      if (data['period'] != 'Now')
-                                        TargetDateBar(
-                                            targetDate:
-                                                data['targetDate'].toDate(),
-                                            period: data['period'],
-                                            duration: data['duration'],
-                                            isDone: data['isDone']),
-                                      SizedBox(height: 10)
-                                    ],
-                                  ),
-                                ),
-                              );
-                            }
-                            if (data['transactionType'] == 'Buy' ||
-                                data['transactionType'] == 'Sell') {
-                              return InkWell(
-                                onTap: () {
-                                  // Go to transaction details
-                                },
-                                child: ListTile(
-                                  title: Row(children: [
-                                    Expanded(
-                                        child: Text(
-                                          '${data['transactionType']}',
-                                          style: TextStyle(fontSize: 14),
-                                        ),
-                                        flex: 2),
-                                    Expanded(
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          if (data['transactionType'] == 'Buy')
-                                            Text(
-                                              '+${data['amount'].toString()} ',
-                                              style: TextStyle(
-                                                  color: Colors.green,
-                                                  fontSize: 20),
-                                            ),
-                                          if (data['transactionType'] == 'Sell')
-                                            Text(
-                                              '-${data['amount'].toString()}',
-                                              style: TextStyle(
-                                                  color: Colors.red,
-                                                  fontSize: 20),
-                                            ),
-                                          if (data['amount'] == 0)
-                                            Text(
-                                              data['amount'].toString(),
-                                              style: TextStyle(fontSize: 20),
-                                            ),
-                                        ],
-                                      ),
-                                      flex: 6,
-                                    ),
-                                    Expanded(
-                                        child: IconButton(
-                                          icon: Icon(Icons.more_vert),
-                                          onPressed: () {
-                                            setState(() {
-                                              showModalBottomSheet(
-                                                context: context,
-                                                builder:
-                                                    (BuildContext context) {
-                                                  return Container(
-                                                    child: Column(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: <Widget>[
-                                                        ListTile(
-                                                          leading:
-                                                              Icon(Icons.edit),
-                                                          title: Text('Update'),
-                                                          onTap: () {
-                                                            // do something
-                                                            Navigator.pop(
-                                                                context);
-                                                            showStockTransactionAdderDialog(
-                                                                context,
-                                                                document:
-                                                                    document);
-                                                          },
-                                                        ),
-                                                        ListTile(
-                                                          leading: Icon(
-                                                              Icons.delete),
-                                                          title: Text('Delete'),
-                                                          onTap: () async {
-                                                            // do something
-                                                            String documentId =
-                                                                document.id;
-                                                            await stockTransactions
-                                                                .doc(documentId)
-                                                                .update({
-                                                              'isActive': false
-                                                            });
-                                                            await stockTransactions
-                                                                .doc(documentId)
-                                                                .update({
-                                                              'updateDate':
-                                                                  DateTime.now()
-                                                            });
-                                                            Navigator.pop(
-                                                                context);
-                                                          },
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  );
-                                                },
-                                              );
-                                            });
-                                          },
-                                        ),
-                                        flex: 2),
-                                  ]),
-                                  subtitle: Column(children: [
-                                    if (data['currencies'][0] !=
-                                        data['currencies'][1])
-                                      Text(
-                                        '${data['amount']}x${data['price'].toStringAsFixed(2)}=${data['total'].toStringAsFixed(2)} ${data['currencies'][0]} (${data['convertedTotal']} ${data['currencies'][1]})',
-                                        style: TextStyle(fontSize: 12),
-                                      ),
-                                    if (data['currencies'][0] ==
-                                        data['currencies'][1])
-                                      Text(
-                                        '${data['amount']}x${data['price'].toStringAsFixed(2)}=${data['total'].toStringAsFixed(2)} ${data['currencies'][0]}',
-                                        style: TextStyle(fontSize: 12),
-                                      ),
-                                    FutureBuilder<List<String>>(
-                                      future: Future.wait([
-                                        getAccountNameByID(
-                                            data['accountID'][1]),
-                                        getAccountNameByID(
-                                            data['accountID'][0]),
-                                      ]),
-                                      builder: (BuildContext context,
-                                          AsyncSnapshot<List<String>>
-                                              snapshot) {
-                                        if (snapshot.connectionState ==
-                                            ConnectionState.done) {
-                                          if (snapshot.hasData) {
-                                            final sourceAccountName =
-                                                snapshot.data![0];
-                                            final accountName =
-                                                snapshot.data![1];
-                                            String arrow = "-";
-
-                                            if (data['transactionType'] ==
-                                                    'Buy' ||
-                                                data['transactionType'] ==
-                                                    'Payment') arrow = '\u2192';
-
-                                            if (data['transactionType'] ==
-                                                    'Sell' ||
-                                                data['transactionType'] ==
-                                                    'Collection')
-                                              arrow = '\u2190';
-
-                                            return Text(
-                                                '$sourceAccountName $arrow $accountName');
-                                          } else {
-                                            return Text(
-                                                'Error: ${snapshot.error}');
-                                          }
-                                        } else {
-                                          return CircularProgressIndicator();
-                                        }
-                                      },
-                                    ),
-                                    if (data['period'] != 'Now')
-                                      Column(
-                                        children: [
-                                          Text(
-                                              '${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
-                                          SizedBox(height: 10),
-                                          if (data['period'] != 'Now')
-                                            TargetDateBar(
-                                                targetDate:
-                                                    data['targetDate'].toDate(),
-                                                period: data['period'],
-                                                duration: data['duration'],
-                                                isDone: data['isDone']),
-                                          SizedBox(height: 10)
-                                        ],
-                                      ),
-                                    SizedBox(height: 10)
-                                  ]),
-                                ),
-                              );
-                            }
-                          },
-                        );
-                      } else {
-                        return Text('No data available');
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
+                                              ),
+                                              if (data['period'] != 'Now')
+                                                Column(
+                                                  children: [
+                                                    if (data['createDate'] ==
+                                                        data['updateDate'])
+                                                      Text(
+                                                          'Created at ${DateFormat('dd-MM-yyyy – kk:mm').format(data['createDate'].toDate().toLocal())}'),
+                                                    if (data['createDate'] !=
+                                                        data['updateDate'])
+                                                      Text(
+                                                          'Updated at ${DateFormat('dd-MM-yyyy – kk:mm').format(data['targetDate'].toDate().toLocal())}'),
+                                                    SizedBox(height: 10),
+                                                    if (data['period'] != 'Now')
+                                                      TargetDateBar(
+                                                          targetDate:
+                                                              data['targetDate']
+                                                                  .toDate(),
+                                                          period:
+                                                              data['period'],
+                                                          duration:
+                                                              data['duration'],
+                                                          isDone:
+                                                              data['isDone']),
+                                                    SizedBox(height: 10)
+                                                  ],
+                                                ),
+                                              SizedBox(height: 10)
+                                            ]),
+                                          )),
+                                        );
+                                      }
+                                    },
+                                  );
+                                } else {
+                                  return Text('No data available');
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ))),
           Align(
             alignment: Alignment.bottomRight,
             child: Padding(

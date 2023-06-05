@@ -79,126 +79,153 @@ class _LedgerPage extends State<LedgerPage> {
           title: Text('Ledgers'),
         ),
         body: Stack(children: [
-          SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  StreamBuilder<QuerySnapshot>(
-                    stream: userLedgers.snapshots(),
-                    builder: (BuildContext context,
-                        AsyncSnapshot<QuerySnapshot> snapshot) {
-                      if (snapshot.hasError) {
-                        return Text('Error: ${snapshot.error}');
-                      }
+          Center(
+              child: Padding(
+                  padding:
+                      EdgeInsets.only(left: 10, top: 0, right: 10, bottom: 0),
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxWidth: 600,
+                    ),
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            StreamBuilder<QuerySnapshot>(
+                              stream: userLedgers.snapshots(),
+                              builder: (BuildContext context,
+                                  AsyncSnapshot<QuerySnapshot> snapshot) {
+                                if (snapshot.hasError) {
+                                  return Text('Error: ${snapshot.error}');
+                                }
 
-                      if (snapshot.hasData && snapshot.data != null) {
-                        return ListView(
-                          shrinkWrap: true,
-                          physics: NeverScrollableScrollPhysics(),
-                          children: snapshot.data!.docs
-                              .map((DocumentSnapshot document) {
-                            Map<String, dynamic> data =
-                                document.data() as Map<String, dynamic>;
-                            return InkWell(
-                                onTap: () {
-                                  setLedgerID(document);
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              MainPage(document.id)));
-                                },
-                                child: ListTile(
-                                    title: Text(data['ledgerName']),
-                                    subtitle: Text(data['ledgerDetail']),
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                          icon: Icon(Icons.more_vert),
-                                          onPressed: () {
-                                            setState(() {
-                                              showModalBottomSheet(
-                                                context: context,
-                                                builder:
-                                                    (BuildContext context) {
-                                                  return Container(
-                                                    child: Column(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: <Widget>[
-                                                        ListTile(
-                                                          leading:
-                                                              Icon(Icons.share),
-                                                          title: Text('Share'),
-                                                          onTap: () {
-                                                            // do something
-                                                            Navigator.pop(
-                                                                context);
-                                                            showShareLedger(
-                                                                context,
-                                                                document);
-                                                          },
-                                                        ),
-                                                        ListTile(
-                                                          leading:
-                                                              Icon(Icons.edit),
-                                                          title: Text('Update'),
-                                                          onTap: () {
-                                                            // do something
-                                                            Navigator.pop(
-                                                                context);
-                                                            showLedgerUpdaterDialog(
-                                                                context,
-                                                                document);
-                                                          },
-                                                        ),
-                                                        ListTile(
-                                                          leading: Icon(
-                                                              Icons.delete),
-                                                          title: Text('Delete'),
-                                                          onTap: () async {
-                                                            // do something
-                                                            String documentId =
-                                                                document.id;
-                                                            await ledgers
-                                                                .doc(documentId)
-                                                                .update({
-                                                              'isActive': false
-                                                            });
-                                                            await ledgers
-                                                                .doc(documentId)
-                                                                .update({
-                                                              'updateDate':
-                                                                  DateTime.now()
-                                                            });
-                                                            Navigator.pop(
-                                                                context);
-                                                          },
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  );
-                                                },
-                                              );
-                                            });
+                                if (snapshot.hasData && snapshot.data != null) {
+                                  return ListView(
+                                    shrinkWrap: true,
+                                    physics: NeverScrollableScrollPhysics(),
+                                    children: snapshot.data!.docs
+                                        .map((DocumentSnapshot document) {
+                                      Map<String, dynamic> data = document
+                                          .data() as Map<String, dynamic>;
+                                      return InkWell(
+                                          onTap: () {
+                                            setLedgerID(document);
+                                            Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        MainPage(document.id)));
                                           },
-                                        ),
-                                      ],
-                                    )));
-                          }).toList(),
-                        );
-                      } else {
-                        return Text('No data available');
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
+                                          child: Card(
+                                              child: ListTile(
+                                                  title:
+                                                      Text(data['ledgerName']),
+                                                  subtitle: Text(
+                                                      data['ledgerDetail']),
+                                                  trailing: Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      IconButton(
+                                                        icon: Icon(
+                                                            Icons.more_vert),
+                                                        onPressed: () {
+                                                          setState(() {
+                                                            showModalBottomSheet(
+                                                              context: context,
+                                                              builder:
+                                                                  (BuildContext
+                                                                      context) {
+                                                                return Container(
+                                                                  child: Column(
+                                                                    mainAxisSize:
+                                                                        MainAxisSize
+                                                                            .min,
+                                                                    children: <
+                                                                        Widget>[
+                                                                      ListTile(
+                                                                        leading:
+                                                                            Icon(Icons.share),
+                                                                        title: Text(
+                                                                            'Share'),
+                                                                        onTap:
+                                                                            () {
+                                                                          // do something
+                                                                          Navigator.pop(
+                                                                              context);
+                                                                          showShareLedger(
+                                                                              context,
+                                                                              document);
+                                                                        },
+                                                                      ),
+                                                                      ListTile(
+                                                                        leading:
+                                                                            Icon(Icons.edit),
+                                                                        title: Text(
+                                                                            'Update'),
+                                                                        onTap:
+                                                                            () {
+                                                                          // do something
+                                                                          Navigator.pop(
+                                                                              context);
+                                                                          showLedgerUpdaterDialog(
+                                                                              context,
+                                                                              document);
+                                                                        },
+                                                                      ),
+                                                                      ListTile(
+                                                                        leading:
+                                                                            Icon(Icons.delete),
+                                                                        title: Text(
+                                                                            'Delete'),
+                                                                        onTap:
+                                                                            () async {
+                                                                          // do something
+                                                                          String
+                                                                              documentId =
+                                                                              document.id;
+                                                                          await ledgers
+                                                                              .doc(
+                                                                                  documentId)
+                                                                              .update({
+                                                                            'isActive':
+                                                                                false
+                                                                          });
+                                                                          await ledgers
+                                                                              .doc(
+                                                                                  documentId)
+                                                                              .update({
+                                                                            'updateDate':
+                                                                                DateTime.now()
+                                                                          });
+                                                                          Navigator.pop(
+                                                                              context);
+                                                                        },
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                );
+                                                              },
+                                                            );
+                                                          });
+                                                        },
+                                                      ),
+                                                    ],
+                                                  ))));
+                                    }).toList(),
+                                  );
+                                } else {
+                                  return Text('No data available');
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ))),
           Align(
             alignment: Alignment.bottomRight,
             child: Padding(

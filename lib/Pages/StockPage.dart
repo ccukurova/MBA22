@@ -82,115 +82,143 @@ class StockPageState extends State<StockPage> {
       ),
       body: Stack(
         children: [
-          SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.all(10.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  StreamBuilder<QuerySnapshot>(
-                    stream: userStocks.snapshots(),
-                    builder: (BuildContext context,
-                        AsyncSnapshot<QuerySnapshot> snapshot) {
-                      if (snapshot.hasError) {
-                        return Text('Error: ${snapshot.error}');
-                      }
+          Center(
+              child: Padding(
+                  padding:
+                      EdgeInsets.only(left: 10, top: 0, right: 10, bottom: 0),
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxWidth: 600,
+                    ),
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: EdgeInsets.all(10.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            StreamBuilder<QuerySnapshot>(
+                              stream: userStocks.snapshots(),
+                              builder: (BuildContext context,
+                                  AsyncSnapshot<QuerySnapshot> snapshot) {
+                                if (snapshot.hasError) {
+                                  return Text('Error: ${snapshot.error}');
+                                }
 
-                      if (snapshot.hasData && snapshot.data != null) {
-                        return ListView.builder(
-                          shrinkWrap: true,
-                          physics: NeverScrollableScrollPhysics(),
-                          itemCount: snapshot.data!.docs.length,
-                          itemBuilder: (BuildContext context, int index) {
-                            DocumentSnapshot document =
-                                snapshot.data!.docs[index];
-                            String documentId = document.id;
-                            Map<String, dynamic> data =
-                                document.data() as Map<String, dynamic>;
-                            bool showIcons = false;
-                            return InkWell(
-                              onTap: () {
-                                setStockID(document);
-                                Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            StockTransactionPage()));
+                                if (snapshot.hasData && snapshot.data != null) {
+                                  return ListView.builder(
+                                    shrinkWrap: true,
+                                    physics: NeverScrollableScrollPhysics(),
+                                    itemCount: snapshot.data!.docs.length,
+                                    itemBuilder:
+                                        (BuildContext context, int index) {
+                                      DocumentSnapshot document =
+                                          snapshot.data!.docs[index];
+                                      String documentId = document.id;
+                                      Map<String, dynamic> data = document
+                                          .data() as Map<String, dynamic>;
+                                      bool showIcons = false;
+                                      return InkWell(
+                                          onTap: () {
+                                            setStockID(document);
+                                            Navigator.pushReplacement(
+                                                context,
+                                                MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        StockTransactionPage()));
+                                          },
+                                          child: Card(
+                                            child: ListTile(
+                                              title: Text(data['stockName']),
+                                              subtitle: Text(data['unit']),
+                                              trailing: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  BalanceText(documentId),
+                                                  IconButton(
+                                                    icon: Icon(Icons.more_vert),
+                                                    onPressed: () {
+                                                      setState(() {
+                                                        showModalBottomSheet(
+                                                          context: context,
+                                                          builder: (BuildContext
+                                                              context) {
+                                                            return Container(
+                                                              child: Column(
+                                                                mainAxisSize:
+                                                                    MainAxisSize
+                                                                        .min,
+                                                                children: <
+                                                                    Widget>[
+                                                                  ListTile(
+                                                                    leading: Icon(
+                                                                        Icons
+                                                                            .edit),
+                                                                    title: Text(
+                                                                        'Update'),
+                                                                    onTap: () {
+                                                                      // do something
+                                                                      Navigator.pop(
+                                                                          context);
+                                                                      showStockUpdaterDialog(
+                                                                          context,
+                                                                          document);
+                                                                    },
+                                                                  ),
+                                                                  ListTile(
+                                                                    leading: Icon(
+                                                                        Icons
+                                                                            .delete),
+                                                                    title: Text(
+                                                                        'Delete'),
+                                                                    onTap:
+                                                                        () async {
+                                                                      // do something
+                                                                      String
+                                                                          documentId =
+                                                                          document
+                                                                              .id;
+                                                                      await stocks
+                                                                          .doc(
+                                                                              documentId)
+                                                                          .update({
+                                                                        'isActive':
+                                                                            false
+                                                                      });
+                                                                      await stocks
+                                                                          .doc(
+                                                                              documentId)
+                                                                          .update({
+                                                                        'updateDate':
+                                                                            DateTime.now()
+                                                                      });
+                                                                      Navigator.pop(
+                                                                          context);
+                                                                    },
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            );
+                                                          },
+                                                        );
+                                                      });
+                                                    },
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ));
+                                    },
+                                  );
+                                } else {
+                                  return Text('No data available');
+                                }
                               },
-                              child: ListTile(
-                                title: Text(data['stockName']),
-                                subtitle: Text(data['unit']),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    BalanceText(documentId),
-                                    IconButton(
-                                      icon: Icon(Icons.more_vert),
-                                      onPressed: () {
-                                        setState(() {
-                                          showModalBottomSheet(
-                                            context: context,
-                                            builder: (BuildContext context) {
-                                              return Container(
-                                                child: Column(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: <Widget>[
-                                                    ListTile(
-                                                      leading: Icon(Icons.edit),
-                                                      title: Text('Update'),
-                                                      onTap: () {
-                                                        // do something
-                                                        Navigator.pop(context);
-                                                        showStockUpdaterDialog(
-                                                            context, document);
-                                                      },
-                                                    ),
-                                                    ListTile(
-                                                      leading:
-                                                          Icon(Icons.delete),
-                                                      title: Text('Delete'),
-                                                      onTap: () async {
-                                                        // do something
-                                                        String documentId =
-                                                            document.id;
-                                                        await stocks
-                                                            .doc(documentId)
-                                                            .update({
-                                                          'isActive': false
-                                                        });
-                                                        await stocks
-                                                            .doc(documentId)
-                                                            .update({
-                                                          'updateDate':
-                                                              DateTime.now()
-                                                        });
-                                                        Navigator.pop(context);
-                                                      },
-                                                    ),
-                                                  ],
-                                                ),
-                                              );
-                                            },
-                                          );
-                                        });
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      } else {
-                        return Text('No data available');
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ))),
           Align(
             alignment: Alignment.bottomRight,
             child: Padding(

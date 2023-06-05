@@ -21,8 +21,8 @@ class BarChartState extends State<BarChart> {
   @override
   Widget build(BuildContext context) {
     return Container(
-        width: 500,
-        height: 500,
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height / 2,
         child: SfCartesianChart(
           tooltipBehavior: TooltipBehavior(enable: true),
           primaryXAxis: CategoryAxis(),

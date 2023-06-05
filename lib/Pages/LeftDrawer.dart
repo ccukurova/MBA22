@@ -98,13 +98,6 @@ class _LeftDrawerState extends State<LeftDrawer> {
             },
           ),
           ListTile(
-            title: Text('Reports'),
-            onTap: () {
-              // Do something when the user taps on this ListTile
-            },
-          ),
-          // Add more ListTiles as needed
-          ListTile(
             title: Text('Options'),
             onTap: () {
               // Do something when the user taps on this ListTile
