@@ -97,6 +97,18 @@ class CategoriesPageState extends State<CategoriesPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
+                              Image.asset(
+                                'assets/images/categories.png', // Replace with the converted PNG file path
+                                width: 200,
+                                height: 200,
+                              ),
+                              SizedBox(height: 20),
+                              Text('Select a category or create a new one',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold)),
+                              SizedBox(height: 20),
                               StreamBuilder<QuerySnapshot>(
                                 stream: userCategories.snapshots(),
                                 builder: (BuildContext context,
@@ -147,6 +159,10 @@ class CategoriesPageState extends State<CategoriesPage> {
 
                                         return InkWell(
                                           onTap: () {
+                                            var previousRoute =
+                                                ModalRoute.of(context)!
+                                                    .settings;
+
                                             setChoosenCategory(
                                                 category['categoryName']);
                                             widget.onUpdate!(

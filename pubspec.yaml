@@ -46,7 +46,6 @@ dependencies:
   syncfusion_flutter_charts: ^21.1.41
   carousel_slider: ^4.2.1
   numberpicker: ^2.1.2
-  
 
 dev_dependencies:
   flutter_test:
@@ -74,6 +73,17 @@ flutter:
   # assets:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
+
+  assets:
+    - assets/images/proledger.png
+    - assets/images/proledger_white.png
+    - assets/images/ledgers.png
+    - assets/images/accounts.png
+    - assets/images/stocks.png
+    - assets/images/archives.png
+    - assets/images/notes_todos.png
+    - assets/images/categories.png
+    - assets/images/new_user.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

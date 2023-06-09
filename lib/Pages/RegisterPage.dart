@@ -43,15 +43,26 @@ class _RegisterPageState extends State<RegisterPage> {
       body: SingleChildScrollView(
         child: Padding(
           padding:
-              const EdgeInsets.only(left: 0, bottom: 100, right: 0, top: 100),
+              const EdgeInsets.only(left: 0, bottom: 100, right: 0, top: 0),
           child: Form(
             key: _formKey,
             child: Center(
                 child: Container(
-                    width: 400,
+                    constraints: BoxConstraints(maxWidth: 300, maxHeight: 800),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        Image.asset(
+                          'assets/images/new_user.png', // Replace with the converted PNG file path
+                          width: 200,
+                          height: 200,
+                        ),
+                        SizedBox(height: 20),
+                        Text('Create a new account',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold)),
+                        SizedBox(height: 20),
                         TextFormField(
                           decoration: InputDecoration(
                             labelText: 'Name',

@@ -96,6 +96,17 @@ class StockPageState extends State<StockPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            Image.asset(
+                              'assets/images/stocks.png', // Replace with the converted PNG file path
+                              width: 200,
+                              height: 200,
+                            ),
+                            SizedBox(height: 20),
+                            Text('Select a stock',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.bold)),
+                            SizedBox(height: 20),
                             StreamBuilder<QuerySnapshot>(
                               stream: userStocks.snapshots(),
                               builder: (BuildContext context,

@@ -90,6 +90,17 @@ class ArchivePageState extends State<ArchivePage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            Image.asset(
+                              'assets/images/archives.png', // Replace with the converted PNG file path
+                              width: 200,
+                              height: 200,
+                            ),
+                            SizedBox(height: 20),
+                            Text('Select an archived account',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.bold)),
+                            SizedBox(height: 20),
                             StreamBuilder<QuerySnapshot>(
                               stream: userAccounts.snapshots(),
                               builder: (BuildContext context,

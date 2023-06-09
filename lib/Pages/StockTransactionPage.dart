@@ -135,7 +135,7 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                                                     child: Text(
                                                         data['transactionType'],
                                                         style: TextStyle(
-                                                            fontSize: 14)),
+                                                            fontSize: 12)),
                                                     flex: 2),
                                                 Expanded(
                                                     flex: 6,
@@ -320,7 +320,7 @@ class StockTransactionPageState extends State<StockTransactionPage> {
                                                   child: Text(
                                                     '${data['transactionType']}',
                                                     style:
-                                                        TextStyle(fontSize: 14),
+                                                        TextStyle(fontSize: 12),
                                                   ),
                                                   flex: 2),
                                               Expanded(

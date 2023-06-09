@@ -138,7 +138,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                     child: Text(
                                                         data['transactionType'],
                                                         style: TextStyle(
-                                                            fontSize: 14)),
+                                                            fontSize: 12)),
                                                     flex: 2),
                                                 Expanded(
                                                     flex: 6,
@@ -352,7 +352,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                   child: Text(
                                                     '${data['transactionType']}',
                                                     style:
-                                                        TextStyle(fontSize: 14),
+                                                        TextStyle(fontSize: 12),
                                                   ),
                                                   flex: 2),
                                               FutureBuilder<DocumentSnapshot>(
@@ -627,7 +627,7 @@ class AccountTransactionPageState extends State<AccountTransactionPage> {
                                                   child: Text(
                                                     '${data['transactionType']}',
                                                     style:
-                                                        TextStyle(fontSize: 14),
+                                                        TextStyle(fontSize: 12),
                                                   ),
                                                   flex: 2),
                                               FutureBuilder<DocumentSnapshot>(

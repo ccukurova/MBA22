@@ -56,7 +56,10 @@ class _LeftDrawerState extends State<LeftDrawer> {
           ),
           ListTile(
             title: Row(
-              children: [Icon(Icons.book), Text('My ledgers')],
+              children: [
+                Icon(Icons.book, color: Colors.blue),
+                Text(' My ledgers')
+              ],
             ),
             onTap: () {
               Navigator.push(context,
@@ -65,7 +68,10 @@ class _LeftDrawerState extends State<LeftDrawer> {
           ),
           ListTile(
             title: Row(
-              children: [Icon(Icons.account_box), Text('Accounts')],
+              children: [
+                Icon(Icons.account_box, color: Colors.blue),
+                Text(' Accounts')
+              ],
             ),
             onTap: () {
               Navigator.pop(context);
@@ -75,7 +81,10 @@ class _LeftDrawerState extends State<LeftDrawer> {
           ),
           ListTile(
             title: Row(
-              children: [Icon(Icons.shelves), Text('Stocks')],
+              children: [
+                Icon(Icons.shelves, color: Colors.blue),
+                Text(' Stocks')
+              ],
             ),
             onTap: () {
               Navigator.push(context,
@@ -84,7 +93,10 @@ class _LeftDrawerState extends State<LeftDrawer> {
           ),
           ListTile(
             title: Row(
-              children: [Icon(Icons.check_box), Text('Notes & To-do')],
+              children: [
+                Icon(Icons.check_box, color: Colors.blue),
+                Text(' Notes & To-do')
+              ],
             ),
             onTap: () {
               Navigator.push(
@@ -93,7 +105,10 @@ class _LeftDrawerState extends State<LeftDrawer> {
           ),
           ListTile(
             title: Row(
-              children: [Icon(Icons.archive), Text('Archive')],
+              children: [
+                Icon(Icons.archive, color: Colors.blue),
+                Text(' Archive')
+              ],
             ),
             onTap: () {
               Navigator.push(context,
@@ -102,7 +117,10 @@ class _LeftDrawerState extends State<LeftDrawer> {
           ),
           ListTile(
             title: Row(
-              children: [Icon(Icons.tag), Text('Categories')],
+              children: [
+                Icon(Icons.tag, color: Colors.blue),
+                Text(' Categories')
+              ],
             ),
             onTap: () {
               Navigator.push(context,
@@ -111,7 +129,10 @@ class _LeftDrawerState extends State<LeftDrawer> {
           ),
           ListTile(
               title: Row(
-                children: [Icon(Icons.exit_to_app), Text('Exit')],
+                children: [
+                  Icon(Icons.exit_to_app, color: Colors.blue),
+                  Text(' Exit')
+                ],
               ),
               onTap: () {
                 signOutUser();
@@ -157,6 +178,11 @@ class _LeftDrawerState extends State<LeftDrawer> {
     return DrawerHeader(
       child: Column(
         children: [
+          Image.asset(
+            'assets/images/proledger_white.png', // Replace with the converted PNG file path
+            width: 50,
+            height: 50,
+          ),
           Text('${name} ${surname}',
               style: TextStyle(
                 fontSize: 24,

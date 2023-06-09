@@ -130,7 +130,7 @@ class ArchiveTransactionPageState extends State<ArchiveTransactionPage> {
                                                                   'transactionType'],
                                                               style: TextStyle(
                                                                   fontSize:
-                                                                      14)),
+                                                                      12)),
                                                           flex: 4),
                                                       Expanded(
                                                           flex: 13,
@@ -283,7 +283,7 @@ class ArchiveTransactionPageState extends State<ArchiveTransactionPage> {
                                                     child: Text(
                                                       '${data['transactionType']}',
                                                       style: TextStyle(
-                                                          fontSize: 16),
+                                                          fontSize: 12),
                                                     ),
                                                     flex: 2),
                                                 FutureBuilder<DocumentSnapshot>(
@@ -489,7 +489,7 @@ class ArchiveTransactionPageState extends State<ArchiveTransactionPage> {
                                                         child: Text(
                                                           '${data['transactionType']}',
                                                           style: TextStyle(
-                                                              fontSize: 16),
+                                                              fontSize: 12),
                                                         ),
                                                         flex: 2),
                                                     FutureBuilder<

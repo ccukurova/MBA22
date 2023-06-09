@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import '../Helpers/SharedPreferencesManager.dart';
 import 'RegisterPage.dart';
 import 'LedgerPage.dart';
@@ -43,15 +44,26 @@ class LoginPageState extends State<LoginPage> {
         appBar: AppBar(
           title: Text('Login'),
         ),
-        body: Center(
-            child: Container(
-          constraints: BoxConstraints(maxWidth: 300),
-          height: double.infinity,
+        body: SingleChildScrollView(
+            child: Center(
+                child: Container(
+          constraints: BoxConstraints(maxWidth: 300, maxHeight: 800),
           child: Form(
             key: _formKey,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                Image.asset(
+                  'assets/images/proledger.png', // Replace with the converted PNG file path
+                  width: 200,
+                  height: 200,
+                ),
+                SizedBox(height: 20),
+                Text('Welcome!',
+                    textAlign: TextAlign.center,
+                    style:
+                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                SizedBox(height: 20),
                 TextFormField(
                   decoration: InputDecoration(
                     labelText: 'E-mail',
@@ -59,7 +71,7 @@ class LoginPageState extends State<LoginPage> {
                   ),
                   validator: (value) {
                     if (value!.isEmpty) {
-                      return 'Please enter a e-mail address.';
+                      return 'Please enter an e-mail address.';
                     }
                     return null;
                   },
@@ -136,7 +148,7 @@ class LoginPageState extends State<LoginPage> {
               ],
             ),
           ),
-        )));
+        ))));
   }
 
   Future<void> loginUser(String _email, String _password) async {
